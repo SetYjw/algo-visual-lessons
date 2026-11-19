@@ -1,0 +1,2225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>并查集与最小生成树 — 交互式微课 · 实时动画 · 实战题解</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root {
+  --bg: #EEF1F6;
+  --panel: #FFFFFF;
+  --sunk: #F5F7FA;
+  --ink: #18202E;
+  --muted: #5C6779;
+  --line: #D9DFE8;
+  --line-strong: #A9B3C3;
+  --accent: #2B57E0;
+  --accent-soft: #E1E8FC;
+  --on-accent: #FFFFFF;
+  --ok: #17905F;
+  --ok-soft: #DAF1E6;
+  --warn: #B8700C;
+  --warn-soft: #FBEBD2;
+  --err: #C93535;
+  --err-soft: #FCE4E4;
+  --purple: #7A42D9;
+  --purple-soft: #EFE6FD;
+  --skip: #96A0B2;
+  --kw: #8A3FC0;
+  --fn: #1D6FB0;
+  --cm: #7A8699;
+  --num: #C05621;
+  --shadow: 0 2px 12px rgba(24, 32, 46, 0.06);
+  --font-ui: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-display: "Space Grotesk", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1219; --panel: #161C26; --sunk: #11161F; --ink: #E5EAF2; --muted: #93A0B4;
+    --line: #273041; --line-strong: #435069; --accent: #7C9BFF; --accent-soft: #1D2847; --on-accent: #0A1020;
+    --ok: #3FC58F; --ok-soft: #123326; --warn: #F0A53A; --warn-soft: #382810;
+    --err: #FF7676; --err-soft: #3A1A1E; --purple: #B894FF; --purple-soft: #281D42;
+    --skip: #5C667A; --kw: #C99BF5; --fn: #7DB8F0; --cm: #6E7B91; --num: #F6AD55;
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0E1219; --panel: #161C26; --sunk: #11161F; --ink: #E5EAF2; --muted: #93A0B4;
+  --line: #273041; --line-strong: #435069; --accent: #7C9BFF; --accent-soft: #1D2847; --on-accent: #0A1020;
+  --ok: #3FC58F; --ok-soft: #123326; --warn: #F0A53A; --warn-soft: #382810;
+  --err: #FF7676; --err-soft: #3A1A1E; --purple: #B894FF; --purple-soft: #281D42;
+  --skip: #5C667A; --kw: #C99BF5; --fn: #7DB8F0; --cm: #6E7B91; --num: #F6AD55;
+  --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14.5px;
+  line-height: 1.72;
+}
+
+/* ==================== Topbar ==================== */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 11px; }
+.brand-badge {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent), var(--ok));
+  color: #fff; display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 14px; flex: none;
+}
+.brand h1 { font-family: var(--font-display); font-size: 17px; margin: 0; line-height: 1.2; }
+.brand p { margin: 0; font-size: 11.5px; color: var(--muted); }
+
+.course-pills {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.lesson-pill {
+  border: 1px solid var(--line);
+  background: var(--sunk);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .15s;
+}
+.lesson-pill:hover { border-color: var(--accent); color: var(--ink); }
+.lesson-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.lesson-pill.done:not(.active) {
+  border-color: var(--ok);
+  color: var(--ok);
+  background: var(--ok-soft);
+}
+.top-right { display: flex; align-items: center; gap: 10px; }
+.progress-pill {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 7px;
+}
+.theme-btn {
+  background: var(--sunk); border: 1px solid var(--line-strong);
+  border-radius: 7px; padding: 5px 10px; font-size: 12.5px;
+  cursor: pointer; color: var(--ink); font-family: inherit;
+}
+.theme-btn:hover { border-color: var(--accent); }
+
+/* ==================== Main Split Classroom Layout ==================== */
+.classroom {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 18px 20px 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.14fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 1160px) {
+  .classroom { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+/* ==================== LEFT: Interactive Micro-Lesson ==================== */
+.lesson-pane { display: none; animation: fadeIn .22s ease; }
+.lesson-pane.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.lesson-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  display: inline-block;
+}
+.badge.blue { background: var(--accent-soft); color: var(--accent); }
+.badge.green { background: var(--ok-soft); color: var(--ok); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.badge.purple { background: var(--purple-soft); color: var(--purple); }
+.badge.red { background: var(--err-soft); color: var(--err); }
+
+.lesson-title {
+  font-family: var(--font-display);
+  font-size: 23px;
+  line-height: 1.3;
+  margin: 0 0 12px;
+}
+.lesson-lead {
+  color: var(--muted);
+  font-size: 14.5px;
+  margin: 0 0 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lesson-body h3 {
+  font-family: var(--font-display);
+  font-size: 16.5px;
+  margin: 20px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lesson-body p { margin: 0 0 10px; }
+.lesson-body ul, .lesson-body ol { margin: 0 0 12px; padding-left: 20px; }
+.lesson-body li { margin-bottom: 6px; }
+
+.math { font-family: "Times New Roman", Georgia, serif; font-style: italic; font-size: 1.06em; }
+.code-inline {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.formula-box {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 14px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  margin: 12px 0;
+}
+
+.callout {
+  padding: 11px 14px;
+  border-radius: 9px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  margin: 12px 0;
+  font-size: 13.8px;
+}
+.callout.warn { border-left-color: var(--warn); background: color-mix(in srgb, var(--warn-soft) 45%, var(--sunk)); }
+.callout.ok { border-left-color: var(--ok); background: color-mix(in srgb, var(--ok-soft) 45%, var(--sunk)); }
+.callout.err { border-left-color: var(--err); background: color-mix(in srgb, var(--err-soft) 45%, var(--sunk)); }
+
+.try-card {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--panel));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.try-card .try-info { flex: 1 1 220px; }
+.try-card .try-title { font-weight: 700; font-size: 13.5px; color: var(--accent); margin-bottom: 2px; }
+.try-card .try-desc { font-size: 12.8px; color: var(--muted); }
+.try-btns { display: flex; gap: 7px; flex-wrap: wrap; }
+
+.diagram-box {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 12px 0;
+  text-align: center;
+}
+.diagram-box svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+.diagram-cap { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+.quiz-box {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+}
+.quiz-head {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--purple);
+  margin-bottom: 6px;
+}
+.quiz-q { font-weight: 600; font-size: 14px; margin-bottom: 10px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 7px; }
+.quiz-opt {
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.quiz-opt:hover { border-color: var(--accent); }
+.quiz-opt.correct { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); font-weight: 600; }
+.quiz-opt.wrong { background: var(--err-soft); border-color: var(--err); color: var(--err); }
+.quiz-fb {
+  margin-top: 10px;
+  font-size: 13px;
+  padding: 8px 11px;
+  border-radius: 7px;
+  display: none;
+}
+.quiz-fb.show { display: block; }
+.quiz-fb.ok { background: var(--ok-soft); color: var(--ok); }
+.quiz-fb.err { background: var(--err-soft); color: var(--err); }
+
+.lesson-footer {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.table-wrap { overflow-x: auto; margin: 10px 0; }
+table.cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.cmp-table th, table.cmp-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+table.cmp-table th { background: var(--sunk); font-size: 11.5px; color: var(--muted); font-weight: 700; }
+
+.prob-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+.prob-tab {
+  padding: 6px 12px; border-radius: 7px; border: 1px solid var(--line-strong);
+  background: var(--sunk); color: var(--muted); font-weight: 600; font-size: 12.8px; cursor: pointer;
+}
+.prob-tab.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.prob-pane { display: none; }
+.prob-pane.on { display: block; }
+.code-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 12px; background: var(--sunk);
+  border: 1px solid var(--line); border-bottom: none;
+  border-radius: 8px 8px 0 0; font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+}
+pre.cpp-code {
+  margin: 0 0 12px; padding: 11px 13px; background: var(--sunk);
+  border: 1px solid var(--line); border-radius: 0 0 8px 8px;
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.56;
+  overflow-x: auto; max-height: 400px;
+}
+
+/* ==================== RIGHT: Sticky Interactive Workbench ==================== */
+.workbench-sticky {
+  position: sticky;
+  top: 70px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+@media (max-width: 1160px) {
+  .workbench-sticky { position: static; }
+}
+
+.wb-top {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.wb-row { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+
+.seg-switch {
+  display: inline-flex; background: var(--sunk);
+  border: 1px solid var(--line-strong); border-radius: 8px; padding: 2px; gap: 2px;
+}
+.seg-switch button {
+  border: none; background: transparent; padding: 5px 11px; border-radius: 6px;
+  font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer;
+}
+.seg-switch button.on { background: var(--accent); color: var(--on-accent); }
+
+.ctrl-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+.toggle-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border-radius: 7px; border: 1px solid var(--line-strong);
+  background: var(--sunk); font-size: 12px; cursor: pointer; user-select: none; color: var(--ink);
+}
+.toggle-chip input { margin: 0; accent-color: var(--accent); cursor: pointer; }
+
+input[type="number"], select {
+  font-family: var(--font-mono); font-size: 12.5px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 7px; padding: 5px 8px; outline: none;
+}
+input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+.btn {
+  font-family: var(--font-ui); font-size: 12.5px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 7px; padding: 5px 10px;
+  cursor: pointer; white-space: nowrap; transition: all .15s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); color: var(--on-accent); }
+.btn.ok-btn { background: var(--ok); color: #fff; border-color: var(--ok); font-weight: 600; }
+.btn.ok-btn:hover { filter: brightness(1.08); color: #fff; }
+.btn.danger { color: var(--err); border-color: color-mix(in srgb, var(--err) 45%, var(--line)); }
+.btn.danger:hover { background: var(--err-soft); border-color: var(--err); }
+.btn.sm { padding: 4px 9px; font-size: 12px; }
+.btn:disabled { opacity: 0.42; cursor: not-allowed; }
+
+.canvas-box {
+  position: relative;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-height: 300px;
+  max-height: 340px;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#mainSvg { display: block; width: 100%; height: 315px; user-select: none; }
+
+/* SVG DSU & MST Elements */
+.d-edge { stroke: var(--line-strong); stroke-width: 2.2; fill: none; transition: all 0.35s ease; }
+.d-edge.on-path { stroke: var(--accent); stroke-width: 3; }
+.d-edge.on-compress { stroke: var(--purple); stroke-width: 3.2; stroke-dasharray: 6 3; }
+.d-edge.on-ok { stroke: var(--ok); stroke-width: 3; }
+
+.m-edge { stroke: var(--line-strong); stroke-width: 2.2; fill: none; transition: all 0.3s ease; opacity: 0.72; }
+.m-edge.inspect { stroke: var(--accent); stroke-width: 4; opacity: 1; }
+.m-edge.selected { stroke: var(--ok); stroke-width: 4.2; opacity: 1; }
+.m-edge.skipped { stroke: var(--err); stroke-width: 2.5; stroke-dasharray: 6 4; opacity: 0.85; }
+
+.w-pill rect { fill: var(--panel); stroke: var(--line-strong); stroke-width: 1.2; transition: all 0.25s; }
+.w-pill text { fill: var(--ink); font-family: var(--font-mono); font-size: 11px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.w-pill.inspect rect { fill: var(--accent); stroke: var(--accent); }
+.w-pill.inspect text { fill: var(--on-accent); }
+.w-pill.selected rect { fill: var(--ok); stroke: var(--ok); }
+.w-pill.selected text { fill: #fff; }
+.w-pill.skipped rect { fill: var(--err-soft); stroke: var(--err); }
+.w-pill.skipped text { fill: var(--err); }
+
+.t-node { cursor: pointer; transition: transform 0.44s cubic-bezier(.22, 1, .36, 1), opacity 0.25s; }
+.t-node .circle { fill: var(--panel); stroke: var(--line-strong); stroke-width: 2.4; transition: fill .22s, stroke .22s; }
+.t-node:hover .circle { stroke: var(--accent); stroke-width: 3.2; }
+.t-node .key-txt { fill: var(--ink); font-family: var(--font-mono); font-size: 14px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.t-node .meta-bg { fill: var(--panel); stroke: var(--line); stroke-width: 1; }
+.t-node .meta-txt { fill: var(--muted); font-family: var(--font-mono); font-size: 9.2px; font-weight: 600; text-anchor: middle; }
+
+.t-node.path .circle { fill: var(--accent-soft); stroke: var(--accent); }
+.t-node.cur .circle { fill: var(--accent); stroke: var(--accent); stroke-width: 3; }
+.t-node.cur .key-txt { fill: var(--on-accent); }
+.t-node.ok .circle { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 3; }
+.t-node.ok .key-txt { fill: var(--ok); }
+.t-node.warn .circle { fill: var(--err-soft); stroke: var(--err); stroke-width: 3; }
+.t-node.warn .key-txt { fill: var(--err); }
+.t-node.rot .circle { fill: var(--purple-soft); stroke: var(--purple); stroke-width: 3; }
+.t-node.rot .key-txt { fill: var(--purple); }
+
+.legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 4px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; border: 2px solid; }
+.legend .l-line { width: 16px; height: 0; border-radius: 0; border-top: 3px solid; border-bottom: 0; border-left: 0; border-right: 0; }
+
+.narration-box {
+  background: var(--sunk); border: 1px solid var(--line);
+  border-left: 4px solid var(--accent); border-radius: 8px;
+  padding: 9px 12px; display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; min-height: 44px;
+}
+.narration-box.is-warn { border-left-color: var(--err); background: color-mix(in srgb, var(--err-soft) 50%, var(--sunk)); }
+.narration-box.is-rot { border-left-color: var(--purple); background: color-mix(in srgb, var(--purple-soft) 50%, var(--sunk)); }
+.narration-box.is-ok { border-left-color: var(--ok); background: color-mix(in srgb, var(--ok-soft) 50%, var(--sunk)); }
+.narration-text { font-size: 13px; font-weight: 500; line-height: 1.5; }
+.narration-tag {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  padding: 2px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); white-space: nowrap;
+}
+
+.playback-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.playback-bar input[type="range"] { flex: 1 1 110px; accent-color: var(--accent); }
+.step-counter { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); min-width: 60px; text-align: center; }
+
+.wb-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.25fr);
+  gap: 10px;
+}
+@media (max-width: 680px) { .wb-bottom-grid { grid-template-columns: 1fr; } }
+
+.mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+.stat-box { background: var(--sunk); border: 1px solid var(--line); border-radius: 7px; padding: 6px; text-align: center; }
+.stat-box .v { font-family: var(--font-mono); font-size: 15px; font-weight: 700; line-height: 1.2; }
+.stat-box .l { font-size: 10.5px; color: var(--muted); }
+
+/* fa[] Array Cards */
+.fa-panel {
+  background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; padding: 8px;
+}
+.sub-title { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+.fa-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 5px;
+}
+.fa-cell {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  padding: 4px 2px; text-align: center; font-family: var(--font-mono); transition: all 0.25s;
+}
+.fa-cell .idx { font-size: 10px; color: var(--muted); line-height: 1.1; }
+.fa-cell .val { font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.3; }
+.fa-cell .rk { font-size: 9.5px; color: var(--muted); line-height: 1.1; }
+.fa-cell.changed { background: var(--purple-soft); border-color: var(--purple); transform: translateY(-2px); }
+.fa-cell.changed .val { color: var(--purple); }
+.fa-cell.root-hi { background: var(--ok-soft); border-color: var(--ok); }
+.fa-cell.root-hi .val { color: var(--ok); }
+
+/* MST Sorted Edge List */
+.edge-list {
+  background: var(--sunk); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px; max-height: 145px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.edge-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 8px; border-radius: 6px; background: var(--panel);
+  border: 1px solid var(--line); font-family: var(--font-mono); font-size: 11.5px;
+  transition: all 0.2s;
+}
+.edge-row.inspect { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.edge-row.selected { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); font-weight: 600; }
+.edge-row.skipped { background: var(--err-soft); border-color: var(--err); color: var(--err); text-decoration: line-through; opacity: 0.85; }
+.edge-st { font-size: 10.5px; font-weight: 700; }
+
+.code-box {
+  background: var(--sunk); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 0; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.52;
+  overflow-x: auto; max-height: 215px;
+}
+.c-line { display: flex; white-space: pre; padding-right: 10px; border-left: 3px solid transparent; }
+.c-line .ln { width: 24px; flex: none; text-align: right; padding-right: 7px; color: var(--skip); user-select: none; }
+.c-line.active { background: var(--accent-soft); border-left-color: var(--accent); font-weight: 600; }
+.c-line.active .ln { color: var(--accent); }
+.kw { color: var(--kw); } .fn { color: var(--fn); } .cm { color: var(--cm); font-style: italic; } .num { color: var(--num); }
+
+.toast {
+  position: fixed; right: 20px; bottom: 20px; background: var(--ink); color: var(--panel);
+  padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  opacity: 0; transform: translateY(10px); pointer-events: none; transition: all .2s; z-index: 99;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-badge">并</div>
+      <div>
+        <h1>并查集与最小生成树</h1>
+        <p>DSU 与 Kruskal 算法 · 零基础交互微课 · 实战题解</p>
+      </div>
+    </div>
+
+    <nav class="course-pills" id="lessonPills" aria-label="微课目录">
+      <button class="lesson-pill active" data-lesson="0">1. 帮派与代表元</button>
+      <button class="lesson-pill" data-lesson="1">2. 路径压缩与按秩</button>
+      <button class="lesson-pill" data-lesson="2">3. MST 与 Kruskal</button>
+      <button class="lesson-pill" data-lesson="3">4. 贪心为何正确</button>
+      <button class="lesson-pill" data-lesson="4">5. 实战题解</button>
+    </nav>
+
+    <div class="top-right">
+      <a class="theme-btn" href="../../index.html" style="text-decoration:none;">← 目录</a>
+      <span class="progress-pill" id="progressPill">随堂测 0/4</span>
+      <button class="theme-btn" id="themeBtn" title="切换浅色/深色主题">🌓 主题</button>
+    </div>
+  </div>
+</header>
+
+<main class="classroom">
+  <!-- ==================== LEFT: 5 MICRO-LESSONS ==================== -->
+  <section class="panel" id="lessonContainer">
+
+    <!-- LESSON 1 -->
+    <article class="lesson-pane active" data-lesson="0">
+      <div class="lesson-eyebrow"><span class="badge blue">第 1 课 / 共 5 课</span> 动态连通性入门</div>
+      <h2 class="lesson-title">动态连通性与“帮派老大”直觉</h2>
+      <p class="lesson-lead">如果地图上有 10 万座城市，边修路边问“城市 A 和城市 B 通不通”，每次都跑 DFS/BFS 会慢到超时。并查集用区区一个数组，就能把查询和合并做到近乎常数时间。</p>
+
+      <div class="lesson-body">
+        <h3>1. 痛点：为什么不能每次都 DFS？</h3>
+        <p>想象一个不断演化的社交网络（或公路网），系统会交替执行两种操作，共 10<sup>5</sup> 次：</p>
+        <ul>
+          <li><b>合并（Union）</b>：在 <span class="math">u</span> 和 <span class="math">v</span> 之间修一条路，使它们所在的集合连通。</li>
+          <li><b>查询（Find）</b>：询问 <span class="math">u</span> 和 <span class="math">v</span> 目前是否互通。</li>
+        </ul>
+        <p>如果每次查询都用 DFS/BFS 遍历整张图，单次耗时 <span class="math">O</span>(<span class="math">n</span> + <span class="math">m</span>)，10<sup>5</sup> 次查询就会达到 10<sup>10</sup> 级运算，直接 TLE（超时）。我们并不关心“怎么走过去”，只关心<strong>“它们属不属于同一个连通块”</strong>。</p>
+
+        <h3>2. 直觉模型：每个集合选一位“帮派老大”</h3>
+        <p>我们可以把每个连通块想象成一个<strong>江湖帮派</strong>：帮派里只有一位最终的<strong>老大（代表元，Root）</strong>。每个人只需记住自己的“直接上级” <span class="code-inline">fa[x]</span> 是谁；而老大的上级就是他自己，即 <span class="code-inline">fa[root] == root</span>。</p>
+
+        <div class="diagram-box">
+          <svg viewBox="0 0 460 155" width="460" height="155" aria-label="并查集森林与fa数组示意图">
+            <defs>
+              <marker id="arrStatic" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,1 L9,5 L0,9 z" fill="var(--accent)"/>
+              </marker>
+            </defs>
+            <!-- Left Tree -->
+            <line x1="65" y1="90" x2="105" y2="48" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#arrStatic)"/>
+            <line x1="155" y1="90" x2="120" y2="48" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#arrStatic)"/>
+            <circle cx="112" cy="36" r="18" fill="var(--ok-soft)" stroke="var(--ok)" stroke-width="2.4"/>
+            <text x="112" y="41" text-anchor="middle" font-family="var(--font-mono)" font-weight="700" font-size="13" fill="var(--ok)">1</text>
+            <text x="112" y="13" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--ok)">老大 (fa[1]=1)</text>
+            <circle cx="60" cy="104" r="16" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="2"/>
+            <text x="60" y="109" text-anchor="middle" font-family="var(--font-mono)" font-weight="700" font-size="13" fill="var(--ink)">2</text>
+            <circle cx="164" cy="104" r="16" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="2"/>
+            <text x="164" y="109" text-anchor="middle" font-family="var(--font-mono)" font-weight="700" font-size="13" fill="var(--ink)">3</text>
+            <!-- Right Tree -->
+            <line x1="340" y1="90" x2="340" y2="56" stroke="var(--accent)" stroke-width="2.2" marker-end="url(#arrStatic)"/>
+            <circle cx="340" cy="36" r="18" fill="var(--ok-soft)" stroke="var(--ok)" stroke-width="2.4"/>
+            <text x="340" y="41" text-anchor="middle" font-family="var(--font-mono)" font-weight="700" font-size="13" fill="var(--ok)">4</text>
+            <text x="340" y="13" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--ok)">老大 (fa[4]=4)</text>
+            <circle cx="340" cy="104" r="16" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="2"/>
+            <text x="340" y="109" text-anchor="middle" font-family="var(--font-mono)" font-weight="700" font-size="13" fill="var(--ink)">5</text>
+            <!-- Array Strip -->
+            <text x="230" y="144" text-anchor="middle" font-family="var(--font-mono)" font-size="12" fill="var(--muted)">fa[] = [ 1→1,  2→1,  3→1,  4→4,  5→4 ]</text>
+          </svg>
+          <div class="diagram-cap">图 1-1：并查集在逻辑上是一片“有根树森林”，箭头由子节点指向父节点 <span class="code-inline">fa[x]</span></div>
+        </div>
+
+        <div class="callout ok">
+          <strong>两个核心操作的本质：</strong><br>
+          1. <b>查老大 <span class="code-inline">find(x)</span></b>：顺着 <span class="code-inline">fa[x]</span> 一路往上爬，直到遇到 <span class="code-inline">fa[r] == r</span>，返回老大 <span class="code-inline">r</span>。<br>
+          2. <b>合帮派 <span class="code-inline">unite(u, v)</span></b>：先找到各自的老大 <span class="code-inline">ru = find(u)</span>、<span class="code-inline">rv = find(v)</span>；若老大不同，只需让其中一个老大拜另一个老大为大哥：<span class="code-inline">fa[rv] = ru</span>！
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">微实验 1：亲手组建帮派并查验连通性</div>
+            <div class="try-desc">点击按钮驱动右侧演示台，观察 <span class="code-inline">fa[]</span> 数组和森林结构如何联动变化。</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="demoLesson1Build()">▶ 演示合并 (1,2)(2,3)(4,5)</button>
+            <button class="btn sm" onclick="demoLesson1Find()">▶ 查 Find(3) 找老大</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="0" data-ans="1">
+          <div class="quiz-head">随堂小测 1 / 4</div>
+          <div class="quiz-q">在并查集中，判断节点 <span class="math">u</span> 和节点 <span class="math">v</span> 是否属于同一个连通块，正确的写法是？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" data-idx="0">A. 直接判断 <span class="code-inline">fa[u] == fa[v]</span></button>
+            <button class="quiz-opt" data-idx="1">B. 比较两者的最终代表元 <span class="code-inline">find(u) == find(v)</span></button>
+            <button class="quiz-opt" data-idx="2">C. 判断 <span class="code-inline">fa[u] == v || fa[v] == u</span></button>
+          </div>
+          <div class="quiz-fb" data-ok="回答正确！即使两个节点在同一棵树里，它们的直接父节点 fa[u] 和 fa[v] 也可能不同（比如一高一低），必须顺着路径找到最顶层的代表元 find(u) == find(v)。" data-err="不对哦！同属一个集合的两个节点，直接上级 fa[u] 与 fa[v] 未必相同，只有沿着上级一直追到根节点 find(u) 与 find(v) 才一定相同。"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <span style="font-size:12.5px;color:var(--muted);">提示：右侧画布点击任意节点可直接触发 Find</span>
+        <button class="btn primary" onclick="goLesson(1)">下一课：路径压缩与按秩合并 →</button>
+      </div>
+    </article>
+
+    <!-- LESSON 2 -->
+    <article class="lesson-pane" data-lesson="1">
+      <div class="lesson-eyebrow"><span class="badge purple">第 2 课 / 共 5 课</span> 复杂度飙升与神级优化</div>
+      <h2 class="lesson-title">从退化成链到近乎 O(1)：路径压缩与按秩合并</h2>
+      <p class="lesson-lead">朴素并查集在最坏情况下会退化成一条长链，查询退化到 O(n)。加上短短两行代码优化后，10 亿个节点也只需最多 4 步！</p>
+
+      <div class="lesson-body">
+        <h3>1. 危机：当森林退化成一条“糖葫芦”</h3>
+        <p>如果我们不加控制地依次执行 <span class="code-inline">unite(1,2)</span>、<span class="code-inline">unite(2,3)</span>、<span class="code-inline">unite(3,4)</span>……每次都把旧树挂到新节点下面，整棵树就会变成高度为 <span class="math">n</span> 的单链：1 ← 2 ← 3 ← 4 ← 5 ← 6。此时调用一次 <span class="code-inline">find(6)</span> 就要连跳 5 次，时间复杂度退化为 <span class="math">O</span>(<span class="math">n</span>)。</p>
+
+        <h3>2. 优化一：路径压缩（Path Compression）</h3>
+        <p>既然我们每次 <span class="code-inline">find(x)</span> 已经辛苦地一路爬到了最顶层的老大 <span class="code-inline">root</span>，何不在“回溯”的路上顺手告诉沿途的每一个小弟：<strong>“别找你原来的中层领导了，以后直接认总老大当上级！”</strong></p>
+        <div class="formula-box">
+          int find(int x) { return fa[x] == x ? x : fa[x] = find(fa[x]); }
+        </div>
+        <p>仅仅多写了一个 <span class="code-inline">fa[x] =</span>，一次查询就会把整条长链瞬间<strong>拍扁成深度为 1 的星形结构</strong>，后续所有查询一步直达老大！</p>
+
+        <h3>3. 优化二：按秩合并（Union by Rank / Size）</h3>
+        <p>合并两棵树时，如果把“大高个树”挂到“矮个子树”下面，整体高度会 +1；反过来，<strong>永远把矮树（秩小）挂到高树（秩大）下面</strong>，树高就几乎不会增长。单靠按秩合并，就能严格保证树高不超过 <span class="math">O</span>(log <span class="math">n</span>)。</p>
+
+        <h3>4. 强强联手：神秘的阿克曼反函数 α(n) ≤ 4</h3>
+        <p>同时使用<strong>路径压缩 + 按秩合并</strong>时，单次操作的均摊时间复杂度为 <span class="math">O</span>(<span class="math">&alpha;</span>(<span class="math">n</span>))，其中 <span class="math">&alpha;</span>(<span class="math">n</span>) 是增长极其缓慢的<strong>阿克曼反函数（Inverse Ackermann Function）</strong>：</p>
+        <ul>
+          <li>当 <span class="math">n</span> &le; 10<sup>80</sup>（全宇宙可观测原子总数！）时，<span class="math">&alpha;</span>(<span class="math">n</span>) 依然 <strong>&le; 4</strong>。</li>
+          <li>因此在实际算法竞赛与工程中，优化后的并查集可以放心当作 <strong><span class="math">O</span>(1)</strong> 使用。</li>
+        </ul>
+
+        <div class="table-wrap">
+          <table class="cmp-table">
+            <thead>
+              <tr><th>实现方案</th><th>单次 Find 均摊复杂度</th><th>竞赛推荐度</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>朴素并查集（无优化）</td><td>最坏 <span class="math">O</span>(<span class="math">n</span>)</td><td><span class="badge red">易超时</span></td></tr>
+              <tr><td>仅按秩合并（不压缩）</td><td><span class="math">O</span>(log <span class="math">n</span>)</td><td><span class="badge warn">可持久化/撤回时用</span></td></tr>
+              <tr><td>仅路径压缩</td><td>均摊 <span class="math">O</span>(log <span class="math">n</span>)（随机接近 <span class="math">O</span>(1)）</td><td><span class="badge blue">代码最简短</span></td></tr>
+              <tr><td>路径压缩 + 按秩合并</td><td><span class="math">O</span>(<span class="math">&alpha;</span>(<span class="math">n</span>)) &approx; <span class="math">O</span>(1)</td><td><span class="badge green">最优标准写法</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">微实验 2：肉眼对比“无压缩长链” vs “路径压缩拍扁”</div>
+            <div class="try-desc">先看关闭压缩时 Find(6) 费力爬 5 层；再开压缩看 6,5,4,3,2 瞬间集体改认 1 为父！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn sm" onclick="demoLesson2Chain(false)">▶ 无压缩 Find(6)</button>
+            <button class="btn primary sm" onclick="demoLesson2Chain(true)">▶ 开启路径压缩拍扁长链</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="1" data-ans="2">
+          <div class="quiz-head">随堂小测 2 / 4</div>
+          <div class="quiz-q">关于“路径压缩 + 按秩合并”并查集的复杂度 <span class="math">O</span>(<span class="math">&alpha;</span>(<span class="math">n</span>))，以下说法正确的是？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" data-idx="0">A. 路径压缩会改变树的连通性，导致某些节点脱离原集合</button>
+            <button class="quiz-opt" data-idx="1">B. <span class="math">&alpha;</span>(<span class="math">n</span>) 约等于 log<sub>2</sub> <span class="math">n</span>，在 <span class="math">n</span> = 10<sup>6</sup> 时约为 20</button>
+            <button class="quiz-opt" data-idx="2">C. 路径压缩只把沿途节点直接挂到根节点上，不改变集合归属；且在现实规模下 <span class="math">&alpha;</span>(<span class="math">n</span>) &le; 4</button>
+          </div>
+          <div class="quiz-fb" data-ok="完全正确！路径压缩让所有沿途节点直接指向同一个根节点，集合归属丝毫不变，而 α(n) 增长极慢，现实数据规模内永远不超过 4。" data-err="再想想：路径压缩只是跳过中间人直接认总老大，集合归属不变；而且阿克曼反函数 α(n) 比 log n 小得多，n ≤ 10^80 时都 ≤ 4。"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(0)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(2)">下一课：最小生成树与 Kruskal →</button>
+      </div>
+    </article>
+
+    <!-- LESSON 3 -->
+    <article class="lesson-pane" data-lesson="2">
+      <div class="lesson-eyebrow"><span class="badge green">第 3 课 / 共 5 课</span> 图论核心应用</div>
+      <h2 class="lesson-title">最小生成树（MST）与 Kruskal 贪心算法</h2>
+      <p class="lesson-lead">要在 n 座村庄之间铺设光纤，使任意两村互通且总造价最低，这就是经典的最小生成树问题。并查集正是 Kruskal 算法实现 O(1) 判环的灵魂引擎！</p>
+
+      <div class="lesson-body">
+        <h3>1. 什么是最小生成树（Minimum Spanning Tree）？</h3>
+        <p>给定一张包含 <span class="math">n</span> 个顶点、<span class="math">m</span> 条带权无向边的连通图，我们要选出其中的一部分边构成一棵<strong>生成树</strong>：</p>
+        <ul>
+          <li><strong>连通所有点</strong>：任意两个村庄都能互相到达。</li>
+          <li><strong>不含任何环</strong>：有环就一定存在多余的边，砍掉它更省钱！因此恰好选中 <strong><span class="math">n</span> &minus; 1 条边</strong>。</li>
+          <li><strong>总权值最小</strong>：选出的 <span class="math">n</span> &minus; 1 条边权值之和达到全局最小。</li>
+        </ul>
+
+        <h3>2. Kruskal 算法：最直觉的“挑便宜货”贪心</h3>
+        <p>Kruskal 算法的思路简单得令人拍案叫绝：<strong>先把所有边按价格从便宜到贵排好队，然后一条条试着买</strong>：</p>
+        <ol>
+          <li>将所有 <span class="math">m</span> 条边按权值 <span class="math">w</span> <strong>从小到大排序</strong>。</li>
+          <li>初始化并查集：每个点各自为一个独立帮派（共 <span class="math">n</span> 个连通块）。</li>
+          <li>依次考察每一条边 (<span class="math">u</span>, <span class="math">v</span>, <span class="math">w</span>)：
+            <ul>
+              <li>用并查集查询 <span class="code-inline">find(u) == find(v)</span>：若<strong>相等</strong>，说明 <span class="math">u</span> 和 <span class="math">v</span> 早就连通了，再选这条边就会<strong>形成环</strong> &rarr; <strong>果断跳过（红色虚线）</strong>！</li>
+              <li>若<strong>不等</strong>，说明这条边连接了两个尚未互通的区域 &rarr; <strong>选中加入 MST（绿色实线）</strong>，执行 <span class="code-inline">unite(u, v)</span>，累加权值 <span class="code-inline">ans += w</span>。</li>
+            </ul>
+          </li>
+          <li>当选满 <strong><span class="math">n</span> &minus; 1 条边</strong> 时立刻结束；若扫完所有边仍不足 <span class="math">n</span> &minus; 1 条，说明原图不连通，不存在最小生成树。</li>
+        </ol>
+
+        <div class="formula-box">
+          总时间复杂度 = 边排序 O(m log m) + 并查集判环 O(m · α(n)) = O(m log m)
+        </div>
+
+        <div class="callout">
+          <strong>为什么说并查集和 Kruskal 是天作之合？</strong><br>
+          每次考察一条边都要判断“加上它会不会成环”。如果用 DFS 判环，总复杂度会退化到 <span class="math">O</span>(<span class="math">m</span> &middot; <span class="math">n</span>)；而用并查集判断 <span class="code-inline">find(u) == find(v)</span>，每次只需近乎 <span class="math">O</span>(1) 时间！
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">微实验 3：一步步观看 Kruskal 选边与跳过成环边</div>
+            <div class="try-desc">右侧切换至 MST 模式，留意观察同色节点（同集合）之间的边是如何被红色虚线跳过的！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="demoLesson3Kruskal('classic6')">▶ 演示经典 6 点 9 边图</button>
+            <button class="btn sm" onclick="demoLesson3Kruskal('adv7')">▶ 演示 7 点 10 边进阶图</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="2" data-ans="0">
+          <div class="quiz-head">随堂小测 3 / 4</div>
+          <div class="quiz-q">对于一张 <span class="math">n</span> 个点、<span class="math">m</span> 条边的稀疏图（<span class="math">m</span> 与 <span class="math">n</span> 同阶），使用优化后并查集的 Kruskal 算法，其时间复杂度瓶颈在于？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" data-idx="0">A. 对 <span class="math">m</span> 条边按权值排序，耗时 <span class="math">O</span>(<span class="math">m</span> log <span class="math">m</span>)</button>
+            <button class="quiz-opt" data-idx="1">B. 并查集的 <span class="math">m</span> 次查询与合并，耗时 <span class="math">O</span>(<span class="math">m</span><sup>2</sup>)</button>
+            <button class="quiz-opt" data-idx="2">C. 初始化 <span class="math">fa[]</span> 数组，耗时 <span class="math">O</span>(<span class="math">n</span> log <span class="math">n</span>)</button>
+          </div>
+          <div class="quiz-fb" data-ok="正确！并查集的 m 次操作总共只有 O(m · α(n))，几乎是线性的；所以真正的性能瓶颈在第一步对 m 条边排序的 O(m log m)。" data-err="再回顾一下：初始化 fa[] 是 O(n)，优化后并查集 m 次操作仅 O(m·α(n)) ≈ O(m)，真正占大头的是排序 O(m log m)。"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(1)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(3)">下一课：贪心为何一定正确 →</button>
+      </div>
+    </article>
+
+    <!-- LESSON 4 -->
+    <article class="lesson-pane" data-lesson="3">
+      <div class="lesson-eyebrow"><span class="badge warn">第 4 课 / 共 5 课</span> 算法正确性证明</div>
+      <h2 class="lesson-title">为什么 Kruskal 贪心一定正确？</h2>
+      <p class="lesson-lead">贪心算法常常“看起来很美，其实有反例”。凭什么每次只顾眼前选最便宜的不成环边，最终一定能得到全局最优解？答案藏在两条优美的图论定理中。</p>
+
+      <div class="lesson-body">
+        <h3>1. 切分定理（Cut Property）—— 为什么“选它”绝不吃亏</h3>
+        <p>把图中的所有顶点任意分成两个非空阵营 <span class="math">S</span> 和 <span class="math">V</span> \ <span class="math">S</span>（称为一个<strong>切分</strong>）。所有一端在 <span class="math">S</span>、另一端在 <span class="math">V</span> \ <span class="math">S</span> 的边称为<strong>横跨边</strong>。</p>
+        <div class="callout ok">
+          <strong>切分定理：</strong>对于任意一个切分，权值最小的那条横跨边 <span class="math">e</span>，<strong>一定属于某棵最小生成树</strong>！
+        </div>
+
+        <div class="diagram-box">
+          <svg viewBox="0 0 460 155" width="460" height="155" aria-label="切分定理替换法示意图">
+            <!-- Regions -->
+            <ellipse cx="115" cy="80" rx="88" ry="58" fill="var(--accent-soft)" stroke="var(--accent)" stroke-dasharray="5 4" stroke-width="1.8"/>
+            <ellipse cx="345" cy="80" rx="88" ry="58" fill="var(--purple-soft)" stroke="var(--purple)" stroke-dasharray="5 4" stroke-width="1.8"/>
+            <text x="58" y="38" font-size="12" font-weight="700" fill="var(--accent)">集合 S</text>
+            <text x="372" y="38" font-size="12" font-weight="700" fill="var(--purple)">集合 V \ S</text>
+            <!-- Cut line -->
+            <line x1="230" y1="10" x2="230" y2="148" stroke="var(--warn)" stroke-width="2" stroke-dasharray="6 4"/>
+            <text x="230" y="14" text-anchor="middle" font-size="11" font-weight="700" fill="var(--warn)">切分边界</text>
+            <!-- Heavier edge e' -->
+            <line x1="150" y1="52" x2="310" y2="52" stroke="var(--err)" stroke-width="2.6" stroke-dasharray="5 3"/>
+            <rect x="208" y="38" width="44" height="20" rx="5" fill="var(--err-soft)" stroke="var(--err)"/>
+            <text x="230" y="52" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" font-weight="700" fill="var(--err)">e' = 9</text>
+            <!-- Lightest edge e -->
+            <line x1="150" y1="108" x2="310" y2="108" stroke="var(--ok)" stroke-width="3.5"/>
+            <rect x="208" y="94" width="44" height="20" rx="5" fill="var(--ok)" stroke="var(--ok)"/>
+            <text x="230" y="108" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" font-weight="700" fill="#fff">e = 3</text>
+            <!-- Internal tree paths -->
+            <path d="M150,52 Q95,80 150,108" fill="none" stroke="var(--line-strong)" stroke-width="2"/>
+            <path d="M310,52 Q365,80 310,108" fill="none" stroke="var(--line-strong)" stroke-width="2"/>
+            <!-- Nodes -->
+            <circle cx="150" cy="52" r="9" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+            <circle cx="150" cy="108" r="9" fill="var(--panel)" stroke="var(--accent)" stroke-width="2"/>
+            <circle cx="310" cy="52" r="9" fill="var(--panel)" stroke="var(--purple)" stroke-width="2"/>
+            <circle cx="310" cy="108" r="9" fill="var(--panel)" stroke="var(--purple)" stroke-width="2"/>
+          </svg>
+          <div class="diagram-cap">图 4-1：反证替换法 —— 若某棵 MST 没选最轻横跨边 <span class="code-inline">e=3</span>，把 <span class="code-inline">e</span> 加进去会形成环，砍掉环上另一条横跨边 <span class="code-inline">e'=9</span> 后，总权值只降不升！</div>
+        </div>
+
+        <p><strong>三句话证明（交换论证法）：</strong></p>
+        <ol>
+          <li>假设存在一棵最优树 <span class="math">T</span> 居然没有选最轻横跨边 <span class="math">e</span>。</li>
+          <li>把 <span class="math">e</span> 强行加入 <span class="math">T</span>，必然恰好形成一个环；既然 <span class="math">e</span> 从 <span class="math">S</span> 跨到了 <span class="math">V</span> \ <span class="math">S</span>，这个环想绕回来，就必然还包含另一条横跨边 <span class="math">e'</span>。</li>
+          <li>因为 <span class="math">e</span> 是最轻的横跨边，必有 <span class="math">w</span>(<span class="math">e</span>) &le; <span class="math">w</span>(<span class="math">e'</span>)。把 <span class="math">e'</span> 踢掉换成 <span class="math">e</span>，新树依然连通无环，且总价<strong>更低或相等</strong>！所以选 <span class="math">e</span> 永远安全。</li>
+        </ol>
+
+        <h3>2. 环性质（Cycle Property）—— 为什么“跳过它”绝不后悔</h3>
+        <p>当 Kruskal 考察一条边 <span class="math">e</span> = (<span class="math">u</span>, <span class="math">v</span>) 时，如果发现 <span class="code-inline">find(u) == find(v)</span>：</p>
+        <ul>
+          <li>说明此前已经选出了一些边，把 <span class="math">u</span> 和 <span class="math">v</span> 连成了一条路径；</li>
+          <li>因为我们是<strong>按边权从小到大排序</strong>考察的，那条路径上所有已选边的权值都 <strong>&le; <span class="math">w</span>(<span class="math">e</span>)</strong>；</li>
+          <li>因此 <span class="math">e</span> 一定是这个环里<strong>最重（之一）的边</strong>！根据环性质，任意环上最重的边永远不需要出现在最小生成树里，直接丢弃毫无遗憾。</li>
+        </ul>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">微实验 4：在动画中印证“切分定理”与“环性质”</div>
+            <div class="try-desc">运行 Kruskal 并单步前进，观察每条被选中的绿边都连接了两种不同颜色的阵营，而每条红虚线都是环上最重的边！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="demoLesson4Cycle()">▶ 定位观察成环跳过瞬间</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="3" data-ans="1">
+          <div class="quiz-head">随堂小测 4 / 4</div>
+          <div class="quiz-q">如果一张连通无向图的所有边权<strong>互不相同</strong>，根据切分定理可以推出以下哪个结论？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" data-idx="0">A. 这张图可能有多种不同边集组成的最小生成树</button>
+            <button class="quiz-opt" data-idx="1">B. 这张图的最小生成树是<strong>唯一</strong>的</button>
+            <button class="quiz-opt" data-idx="2">C. Kruskal 算法会失效，必须改用 Prim 算法</button>
+          </div>
+          <div class="quiz-fb" data-ok="太棒了！当所有边权互不相同时，任意切分的最小横跨边都是严格唯一的（w(e) < w(e')），因此每一条必选边都唯一确定，整个 MST 必然唯一。" data-err="想想反证法里的不等号：当边权互不相同时，w(e) 严格小于 w(e')，如果不选 e 而选 e'，总权值一定严格变大！所以 MST 必然唯一。"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(2)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(4)">下一课：竞赛实战题解 →</button>
+      </div>
+    </article>
+
+    <!-- LESSON 5 -->
+    <article class="lesson-pane" data-lesson="4">
+      <div class="lesson-eyebrow"><span class="badge blue">第 5 课 / 共 5 课</span> 竞赛真题实战</div>
+      <h2 class="lesson-title">实战题解：从模板题到种类并查集</h2>
+      <p class="lesson-lead">精选洛谷 3 道由浅入深的经典题：先拿稳并查集与 Kruskal 两大模板，再挑战 NOIP 经典提高题《关押罪犯》，彻底打通扩展域并查集思维。</p>
+
+      <div class="lesson-body">
+        <div class="prob-tabs" id="probTabs">
+          <button class="prob-tab on" data-prob="0">P3367 并查集模板</button>
+          <button class="prob-tab" data-prob="1">P3366 MST 模板</button>
+          <button class="prob-tab" data-prob="2">P1525 关押罪犯（进阶）</button>
+        </div>
+
+        <!-- Problem 1: P3367 -->
+        <div class="prob-pane on" data-prob="0">
+          <div class="callout">
+            <strong>洛谷 P3367 【模板】并查集</strong> <span class="badge green">普及-</span><br>
+            <b>题意</b>：给定 <span class="math">N</span> 个元素（<span class="math">N</span> &le; 2&times;10<sup>5</sup>）和 <span class="math">M</span> 次操作（<span class="math">M</span> &le; 10<sup>6</sup>）。操作 1：合并 <span class="math">X</span>, <span class="math">Y</span> 所在集合；操作 2：查询 <span class="math">X</span>, <span class="math">Y</span> 是否在同一集合，输出 <span class="code-inline">Y</span> 或 <span class="code-inline">N</span>。<br>
+            <b>要点</b>：同时加上<strong>路径压缩 + 按秩合并</strong>，并关闭流同步加速读入，即可稳过 10<sup>6</sup> 次操作。
+          </div>
+
+          <div class="try-card">
+            <div class="try-info">
+              <div class="try-title">把样例搬进右侧演示台</div>
+              <div class="try-desc">一键在 DSU 演示台重放合并与连通性查询。</div>
+            </div>
+            <div class="try-btns">
+              <button class="btn primary sm" onclick="demoLesson1Build()">▶ 在 DSU 画布演示</button>
+            </div>
+          </div>
+
+          <div class="code-header">
+            <span>P3367_dsu.cpp · C++17 (AC)</span>
+            <button class="btn sm" onclick="copyCode('codeP3367')">📋 一键复制</button>
+          </div>
+          <pre class="cpp-code" id="codeP3367">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+
+const int MAXN = 200005;
+int fa[MAXN], rk[MAXN];
+
+int find(int x) {
+    return fa[x] == x ? x : fa[x] = find(fa[x]); // 路径压缩
+}
+
+void unite(int x, int y) {
+    int rx = find(x), ry = find(y);
+    if (rx == ry) return;
+    if (rk[rx] &lt; rk[ry]) swap(rx, ry); // 按秩合并：矮树挂高树
+    fa[ry] = rx;
+    if (rk[rx] == rk[ry]) rk[rx]++;
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    cin &gt;&gt; n &gt;&gt; m;
+    for (int i = 1; i &lt;= n; i++) fa[i] = i, rk[i] = 0;
+
+    while (m--) {
+        int z, x, y;
+        cin &gt;&gt; z &gt;&gt; x &gt;&gt; y;
+        if (z == 1) unite(x, y);
+        else cout &lt;&lt; (find(x) == find(y) ? "Y\n" : "N\n");
+    }
+    return 0;
+}</pre>
+        </div>
+
+        <!-- Problem 2: P3366 -->
+        <div class="prob-pane" data-prob="1">
+          <div class="callout">
+            <strong>洛谷 P3366 【模板】最小生成树</strong> <span class="badge blue">普及/提高-</span><br>
+            <b>题意</b>：给定 <span class="math">N</span> 点 <span class="math">M</span> 边无向图（<span class="math">N</span> &le; 5000, <span class="math">M</span> &le; 2&times;10<sup>5</sup>），求最小生成树边权和；若图不连通输出 <span class="code-inline">orz</span>。<br>
+            <b>要点</b>：边列表按权值升序排序 + 并查集判环；记录选中边数 <span class="code-inline">cnt</span>，最终若 <span class="code-inline">cnt == n - 1</span> 则输出总权值，否则输出 <span class="code-inline">orz</span>。
+          </div>
+
+          <div class="try-card">
+            <div class="try-info">
+              <div class="try-title">在右侧 MST 画布动态重放 Kruskal</div>
+              <div class="try-desc">观察排序、查根、选边累加权值与成环跳过的完整过程。</div>
+            </div>
+            <div class="try-btns">
+              <button class="btn primary sm" onclick="demoLesson3Kruskal('classic6')">▶ 在 MST 画布运行 Kruskal</button>
+            </div>
+          </div>
+
+          <div class="code-header">
+            <span>P3366_kruskal.cpp · C++17 (AC)</span>
+            <button class="btn sm" onclick="copyCode('codeP3366')">📋 一键复制</button>
+          </div>
+          <pre class="cpp-code" id="codeP3366">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+
+struct Edge {
+    int u, v, w;
+    bool operator&lt;(const Edge&amp; o) const { return w &lt; o.w; }
+};
+
+int fa[5005];
+int find(int x) { return fa[x] == x ? x : fa[x] = find(fa[x]); }
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    cin &gt;&gt; n &gt;&gt; m;
+    vector&lt;Edge&gt; edges(m);
+    for (int i = 0; i &lt; m; i++) cin &gt;&gt; edges[i].u &gt;&gt; edges[i].v &gt;&gt; edges[i].w;
+
+    sort(edges.begin(), edges.end());
+    for (int i = 1; i &lt;= n; i++) fa[i] = i;
+
+    long long ans = 0;
+    int cnt = 0;
+    for (const auto&amp; e : edges) {
+        int ru = find(e.u), rv = find(e.v);
+        if (ru != rv) {
+            fa[ru] = rv;
+            ans += e.w;
+            if (++cnt == n - 1) break;
+        }
+    }
+
+    if (cnt == n - 1) cout &lt;&lt; ans &lt;&lt; "\n";
+    else cout &lt;&lt; "orz\n";
+    return 0;
+}</pre>
+        </div>
+
+        <!-- Problem 3: P1525 -->
+        <div class="prob-pane" data-prob="2">
+          <div class="callout warn">
+            <strong>洛谷 P1525 [NOIP2010 提高组] 关押罪犯</strong> <span class="badge purple">普及+/提高</span><br>
+            <b>题意</b>：有 <span class="math">N</span> 名罪犯要分到 <strong>2 座监狱</strong>，有 <span class="math">M</span> 对罪犯存在怨气值 <span class="math">c</span>。如果一对有怨气的罪犯被关在同一监狱，就会发生影响力为 <span class="math">c</span> 的冲突。请最小化“最大冲突影响力”。<br>
+            <b>核心建模（贪心 + 扩展域并查集）</b>：
+            <ul style="margin:6px 0 0;">
+              <li><b>贪心排序</b>：先把所有怨气关系按 <span class="math">c</span> <strong>从大到小</strong>排序，优先把怨气最大的一对拆散到不同监狱！</li>
+              <li><b>扩展域技巧</b>：开 2<span class="math">N</span> 个点 —— <span class="code-inline">x</span> 表示“<span class="math">x</span> 的同类（同监狱）”，<span class="code-inline">x + n</span> 表示“<span class="math">x</span> 的敌人（对立监狱）”。</li>
+              <li>要拆散 <span class="math">u</span> 和 <span class="math">v</span>，就执行“敌人的敌人是朋友”：<span class="code-inline">unite(u, v + n)</span> 和 <span class="code-inline">unite(v, u + n)</span>。</li>
+              <li><b>冲突终止</b>：在处理某对 (<span class="math">u</span>, <span class="math">v</span>, <span class="math">c</span>) 前，一旦发现 <span class="code-inline">find(u) == find(v)</span>，说明他俩已被迫在同一监狱，无法避免，当前的 <span class="math">c</span> 就是答案！若全程无冲突则输出 <span class="code-inline">0</span>。</li>
+            </ul>
+          </div>
+
+          <div class="try-card">
+            <div class="try-info">
+              <div class="try-title">用 DSU 画布直观理解“敌人的敌人是朋友”</div>
+              <div class="try-desc">假设 1 和 2 敌对、2 和 3 敌对，则 1 和 3 必须在同一监狱（合并为同集），若此时 1 和 3 也有怨气就必然冲突！</div>
+            </div>
+            <div class="try-btns">
+              <button class="btn primary sm" onclick="demoLesson5Enemy()">▶ 演示 1-3 同监冲突</button>
+            </div>
+          </div>
+
+          <div class="code-header">
+            <span>P1525_prisoners.cpp · C++17 (AC)</span>
+            <button class="btn sm" onclick="copyCode('codeP1525')">📋 一键复制</button>
+          </div>
+          <pre class="cpp-code" id="codeP1525">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+
+struct Pair {
+    int u, v, c;
+    bool operator&lt;(const Pair&amp; o) const { return c &gt; o.c; } // 按怨气从大到小
+};
+
+int fa[40005]; // 开 2*N 空间：1..n 为同类域，n+1..2n 为敌人域
+int find(int x) { return fa[x] == x ? x : fa[x] = find(fa[x]); }
+void unite(int x, int y) { fa[find(x)] = find(y); }
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, m;
+    cin &gt;&gt; n &gt;&gt; m;
+    vector&lt;Pair&gt; a(m);
+    for (int i = 0; i &lt; m; i++) cin &gt;&gt; a[i].u &gt;&gt; a[i].v &gt;&gt; a[i].c;
+
+    sort(a.begin(), a.end());
+    for (int i = 1; i &lt;= 2 * n; i++) fa[i] = i;
+
+    for (const auto&amp; p : a) {
+        if (find(p.u) == find(p.v)) {
+            cout &lt;&lt; p.c &lt;&lt; "\n"; // 无法拆散，当前怨气值即最小最大冲突
+            return 0;
+        }
+        unite(p.u, p.v + n); // u 与 v 的敌人同监狱
+        unite(p.v, p.u + n); // v 与 u 的敌人同监狱
+    }
+    cout &lt;&lt; 0 &lt;&lt; "\n"; // 全程无冲突
+    return 0;
+}</pre>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(3)">← 上一课</button>
+        <a class="btn ok-btn" href="../../index.html" style="text-decoration:none;">🎉 学完返回课程目录</a>
+      </div>
+    </article>
+
+  </section>
+
+  <!-- ==================== RIGHT: STICKY INTERACTIVE WORKBENCH ==================== -->
+  <aside class="panel workbench-sticky" aria-label="实时交互演示台">
+    <div class="wb-top">
+      <div class="wb-row" style="justify-content:space-between;">
+        <div class="seg-switch" id="modeSwitch">
+          <button class="on" data-mode="dsu">并查集模式 (DSU)</button>
+          <button data-mode="mst">Kruskal 最小生成树 (MST)</button>
+        </div>
+        <span style="font-size:11.5px;color:var(--muted);">快捷键：<span class="code-inline">Space</span> 播放 · <span class="code-inline">←/→</span> 单步</span>
+      </div>
+
+      <!-- DSU Controls -->
+      <div class="wb-row" id="dsuControls">
+        <span class="ctrl-label">u:</span>
+        <select id="dsuU" style="width:52px;"></select>
+        <span class="ctrl-label">v:</span>
+        <select id="dsuV" style="width:52px;"></select>
+        <button class="btn primary" id="btnUnion">Union(u, v)</button>
+        <button class="btn" id="btnFind">Find(u)</button>
+        <button class="btn" id="btnMakeChain" title="构造一条退化长链">造长链</button>
+        <button class="btn danger" id="btnResetDsu">重置</button>
+        <label class="toggle-chip" title="Find 时将路径上所有点直接挂到根节点">
+          <input type="checkbox" id="chkCompress" checked> 路径压缩
+        </label>
+        <label class="toggle-chip" title="合并时将矮树挂到高树下">
+          <input type="checkbox" id="chkRank" checked> 按秩合并
+        </label>
+      </div>
+
+      <!-- MST Controls -->
+      <div class="wb-row" id="mstControls" style="display:none;">
+        <select id="mstPreset">
+          <option value="classic6">经典 6 点 9 边图</option>
+          <option value="adv7">进阶 7 点 10 边图</option>
+          <option value="rand6">随机 6 点 9 边图</option>
+        </select>
+        <button class="btn primary" id="btnRunKruskal">▶ 运行 Kruskal</button>
+        <button class="btn" id="btnResetMst">重置状态</button>
+      </div>
+    </div>
+
+    <!-- SVG Canvas -->
+    <div class="canvas-box">
+      <svg id="mainSvg" viewBox="0 0 640 315" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+
+    <!-- Dynamic Legend -->
+    <div class="legend" id="legendBar"></div>
+
+    <!-- Narration Box -->
+    <div class="narration-box" id="narrationBox">
+      <div class="narration-text" id="narrationText">欢迎来到交互演示台！选择上方节点执行 Union / Find，或点击左侧微课里的“▶ 演示”按钮。</div>
+      <span class="narration-tag" id="narrationTag">READY</span>
+    </div>
+
+    <!-- Playback Controls -->
+    <div class="playback-bar">
+      <button class="btn sm" id="btnPrev" title="上一步 (←)">⏮</button>
+      <button class="btn primary sm" id="btnPlay" title="播放/暂停 (Space)">▶ 播放</button>
+      <button class="btn sm" id="btnNext" title="下一步 (→)">⏭</button>
+      <input type="range" id="stepSlider" min="0" max="0" value="0">
+      <span class="step-counter" id="stepCounter">0 / 0</span>
+      <select id="speedSel" title="播放速度">
+        <option value="1250">慢 1.25s</option>
+        <option value="800" selected>中 0.8s</option>
+        <option value="400">快 0.4s</option>
+      </select>
+    </div>
+
+    <!-- Bottom Grid: Stats + Aux (fa[] / Edge List) + Pseudocode -->
+    <div class="wb-bottom-grid">
+      <div>
+        <div class="mini-stats">
+          <div class="stat-box"><div class="v" id="st1">7</div><div class="l" id="st1L">连通分量</div></div>
+          <div class="stat-box"><div class="v" id="st2">1</div><div class="l" id="st2L">最大树高</div></div>
+          <div class="stat-box"><div class="v" id="st3">0</div><div class="l" id="st3L">查询跳步</div></div>
+        </div>
+
+        <!-- DSU Aux: fa[] cards -->
+        <div class="fa-panel" id="faPanel">
+          <div class="sub-title"><span>父指针数组 fa[]（含秩 rk）</span><span id="faHint">紫色=刚修改</span></div>
+          <div class="fa-grid" id="faGrid"></div>
+        </div>
+
+        <!-- MST Aux: sorted edges -->
+        <div id="mstEdgePanel" style="display:none;">
+          <div class="sub-title"><span>按边权升序排列的候选边</span><span id="mstHint">绿=选中 / 红=成环</span></div>
+          <div class="edge-list" id="edgeList"></div>
+        </div>
+      </div>
+
+      <!-- Synchronized C++ Pseudocode -->
+      <div class="code-box" id="codeBox"></div>
+    </div>
+  </aside>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  /* ==================== Theme & Lesson Navigation ==================== */
+  const root = document.documentElement;
+  const savedTheme = localStorage.getItem('algo_theme');
+  if (savedTheme) root.setAttribute('data-theme', savedTheme);
+
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    const cur = root.getAttribute('data-theme');
+    const isDark = cur === 'dark' || (!cur && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = isDark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('algo_theme', next);
+  });
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._tid);
+    showToast._tid = setTimeout(() => t.classList.remove('show'), 2100);
+  }
+
+  let curLesson = 0;
+  const solvedQuizzes = new Set();
+
+  function goLesson(idx) {
+    curLesson = idx;
+    document.querySelectorAll('.lesson-pane').forEach(p => {
+      p.classList.toggle('active', Number(p.dataset.lesson) === idx);
+    });
+    document.querySelectorAll('#lessonPills .lesson-pill').forEach(b => {
+      b.classList.toggle('active', Number(b.dataset.lesson) === idx);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  window.goLesson = goLesson;
+
+  document.querySelectorAll('#lessonPills .lesson-pill').forEach(btn => {
+    btn.addEventListener('click', () => goLesson(Number(btn.dataset.lesson)));
+  });
+
+  // Problem Tabs in Lesson 5
+  document.querySelectorAll('#probTabs .prob-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const id = tab.dataset.prob;
+      document.querySelectorAll('#probTabs .prob-tab').forEach(t => t.classList.toggle('on', t.dataset.prob === id));
+      document.querySelectorAll('.prob-pane').forEach(p => p.classList.toggle('on', p.dataset.prob === id));
+    });
+  });
+
+  // Quiz Interaction
+  document.querySelectorAll('.quiz-box').forEach(box => {
+    const qid = Number(box.dataset.quiz);
+    const ans = Number(box.dataset.ans);
+    const fb = box.querySelector('.quiz-fb');
+    box.querySelectorAll('.quiz-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const chosen = Number(opt.dataset.idx);
+        box.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('correct', 'wrong'));
+        if (chosen === ans) {
+          opt.classList.add('correct');
+          fb.textContent = '✅ ' + fb.dataset.ok;
+          fb.className = 'quiz-fb show ok';
+          solvedQuizzes.add(qid);
+          const pill = document.querySelector(`#lessonPills .lesson-pill[data-lesson="${qid}"]`);
+          if (pill) pill.classList.add('done');
+          document.getElementById('progressPill').textContent = `随堂测 ${solvedQuizzes.size}/4`;
+        } else {
+          opt.classList.add('wrong');
+          fb.textContent = '❌ ' + fb.dataset.err;
+          fb.className = 'quiz-fb show err';
+        }
+      });
+    });
+  });
+
+  window.copyCode = function(id) {
+    const text = document.getElementById(id).textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => showToast('C++ 代码已复制到剪贴板！'));
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('C++ 代码已复制到剪贴板！');
+    }
+  };
+
+  /* ==================== Pseudocode Templates ==================== */
+  const CODE_DSU = [
+    '<span class="kw">int</span> <span class="fn">find</span>(<span class="kw">int</span> x) {',
+    '  <span class="kw">if</span> (fa[x] == x) <span class="kw">return</span> x;        <span class="cm">// 找到老大</span>',
+    '  <span class="kw">int</span> r = <span class="fn">find</span>(fa[x]);             <span class="cm">// 递归向上找</span>',
+    '  <span class="kw">return</span> fa[x] = r;                <span class="cm">// 路径压缩直连根</span>',
+    '}',
+    '<span class="kw">void</span> <span class="fn">unite</span>(<span class="kw">int</span> u, <span class="kw">int</span> v) {',
+    '  <span class="kw">int</span> ru = <span class="fn">find</span>(u), rv = <span class="fn">find</span>(v);',
+    '  <span class="kw">if</span> (ru == rv) <span class="kw">return</span>;            <span class="cm">// 已在同一集合</span>',
+    '  <span class="kw">if</span> (rk[ru] &lt; rk[rv]) <span class="fn">swap</span>(ru, rv);',
+    '  fa[rv] = ru;                     <span class="cm">// 矮树挂到高树下</span>',
+    '  <span class="kw">if</span> (rk[ru] == rk[rv]) rk[ru]++;',
+    '}'
+  ];
+
+  const CODE_MST = [
+    '<span class="fn">sort</span>(edges, edges + m);          <span class="cm">// 1. 按边权升序排序</span>',
+    '<span class="kw">for</span> (<span class="kw">auto</span> &amp;[u, v, w] : edges) {  <span class="cm">// 2. 依次考察最轻边</span>',
+    '  <span class="kw">int</span> ru = <span class="fn">find</span>(u), rv = <span class="fn">find</span>(v); <span class="cm">// 3. 查两端代表元</span>',
+    '  <span class="kw">if</span> (ru == rv) <span class="kw">continue</span>;        <span class="cm">// 4. 同集必成环，跳过</span>',
+    '  fa[ru] = rv;                   <span class="cm">// 5. 合并两个连通块</span>',
+    '  total += w; cnt++;             <span class="cm">// 6. 选入 MST 累加权值</span>',
+    '  <span class="kw">if</span> (cnt == n - <span class="num">1</span>) <span class="kw">break</span>;       <span class="cm">// 7. 选满 n-1 条结束</span>',
+    '}'
+  ];
+
+  function renderCodeBox(lines, activeLine) {
+    const box = document.getElementById('codeBox');
+    box.innerHTML = lines.map((html, i) => {
+      const ln = i + 1;
+      const cls = ln === activeLine ? 'c-line active' : 'c-line';
+      return `<div class="${cls}"><span class="ln">${ln}</span><span>${html}</span></div>`;
+    }).join('');
+  }
+
+  /* ==================== Workbench State & Playback ==================== */
+  let wbMode = 'dsu'; // 'dsu' | 'mst'
+  let steps = [];
+  let curStep = 0;
+  let playing = false;
+  let playTimer = null;
+
+  // DSU live state
+  const DSU_N = 7;
+  let dsuFa = [];
+  let dsuRk = [];
+  let dsuTotalHops = 0;
+
+  // MST presets
+  const MST_PRESETS = {
+    classic6: {
+      n: 6,
+      nodes: [
+        { id: 1, x: 110, y: 158 },
+        { id: 2, x: 245, y: 62 },
+        { id: 3, x: 245, y: 254 },
+        { id: 4, x: 405, y: 62 },
+        { id: 5, x: 405, y: 254 },
+        { id: 6, x: 535, y: 158 }
+      ],
+      edges: [
+        { u: 1, v: 2, w: 4 },
+        { u: 1, v: 3, w: 2 },
+        { u: 2, v: 3, w: 1 },
+        { u: 2, v: 4, w: 5 },
+        { u: 3, v: 5, w: 8 },
+        { u: 2, v: 5, w: 6 },
+        { u: 4, v: 5, w: 3 },
+        { u: 4, v: 6, w: 7 },
+        { u: 5, v: 6, w: 9 }
+      ]
+    },
+    adv7: {
+      n: 7,
+      nodes: [
+        { id: 1, x: 95, y: 158 },
+        { id: 2, x: 215, y: 58 },
+        { id: 3, x: 215, y: 258 },
+        { id: 4, x: 335, y: 158 },
+        { id: 5, x: 455, y: 58 },
+        { id: 6, x: 455, y: 258 },
+        { id: 7, x: 560, y: 158 }
+      ],
+      edges: [
+        { u: 1, v: 2, w: 7 },
+        { u: 1, v: 3, w: 5 },
+        { u: 2, v: 4, w: 8 },
+        { u: 3, v: 4, w: 9 },
+        { u: 2, v: 5, w: 7 },
+        { u: 4, v: 5, w: 5 },
+        { u: 3, v: 6, w: 6 },
+        { u: 4, v: 6, w: 15 },
+        { u: 5, v: 7, w: 9 },
+        { u: 6, v: 7, w: 11 }
+      ]
+    }
+  };
+
+  function makeRandomMstGraph() {
+    const base = MST_PRESETS.classic6;
+    const weights = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    for (let i = weights.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [weights[i], weights[j]] = [weights[j], weights[i]];
+    }
+    return {
+      n: base.n,
+      nodes: base.nodes.map(nd => ({ ...nd })),
+      edges: base.edges.map((e, idx) => ({ u: e.u, v: e.v, w: weights[idx] }))
+    };
+  }
+
+  let curMstGraph = MST_PRESETS.classic6;
+
+  // Component color palette for MST nodes
+  const COMP_COLORS = [
+    { fill: '#E1E8FC', stroke: '#2B57E0', ink: '#1D3FA8' },
+    { fill: '#DAF1E6', stroke: '#17905F', ink: '#0E6642' },
+    { fill: '#EFE6FD', stroke: '#7A42D9', ink: '#5A27B0' },
+    { fill: '#FBEBD2', stroke: '#B8700C', ink: '#8C5205' },
+    { fill: '#FCE4E4', stroke: '#C93535', ink: '#992020' },
+    { fill: '#D9F3F7', stroke: '#0F8299', ink: '#0A5E6E' },
+    { fill: '#FDE6F2', stroke: '#C2367D', ink: '#8F2159' }
+  ];
+
+  // Populate u / v dropdowns
+  function initSelects() {
+    const su = document.getElementById('dsuU');
+    const sv = document.getElementById('dsuV');
+    su.innerHTML = '';
+    sv.innerHTML = '';
+    for (let i = 1; i <= DSU_N; i++) {
+      su.innerHTML += `<option value="${i}">${i}</option>`;
+      sv.innerHTML += `<option value="${i}">${i}</option>`;
+    }
+    su.value = '1';
+    sv.value = '2';
+  }
+  initSelects();
+
+  /* ==================== Playback Engine ==================== */
+  function stopPlay() {
+    playing = false;
+    clearInterval(playTimer);
+    playTimer = null;
+    document.getElementById('btnPlay').textContent = '▶ 播放';
+  }
+
+  function startPlay() {
+    if (!steps.length) return;
+    if (curStep >= steps.length - 1) curStep = 0;
+    playing = true;
+    document.getElementById('btnPlay').textContent = '⏸ 暂停';
+    renderStep(curStep);
+    const delay = Number(document.getElementById('speedSel').value) || 800;
+    clearInterval(playTimer);
+    playTimer = setInterval(() => {
+      if (curStep < steps.length - 1) {
+        curStep++;
+        renderStep(curStep);
+      } else {
+        stopPlay();
+      }
+    }, delay);
+  }
+
+  function loadTrace(newSteps, autoPlay = true) {
+    stopPlay();
+    steps = newSteps;
+    curStep = 0;
+    const slider = document.getElementById('stepSlider');
+    slider.max = Math.max(0, steps.length - 1);
+    slider.value = 0;
+    renderStep(0);
+    if (autoPlay && steps.length > 1) startPlay();
+  }
+
+  document.getElementById('btnPlay').addEventListener('click', () => {
+    if (playing) stopPlay(); else startPlay();
+  });
+  document.getElementById('btnPrev').addEventListener('click', () => {
+    stopPlay();
+    if (curStep > 0) { curStep--; renderStep(curStep); }
+  });
+  document.getElementById('btnNext').addEventListener('click', () => {
+    stopPlay();
+    if (curStep < steps.length - 1) { curStep++; renderStep(curStep); }
+  });
+  document.getElementById('stepSlider').addEventListener('input', e => {
+    stopPlay();
+    curStep = Number(e.target.value);
+    renderStep(curStep);
+  });
+  document.getElementById('speedSel').addEventListener('change', () => {
+    if (playing) startPlay();
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (playing) stopPlay(); else startPlay();
+    } else if (e.code === 'ArrowLeft') {
+      e.preventDefault();
+      stopPlay();
+      if (curStep > 0) { curStep--; renderStep(curStep); }
+    } else if (e.code === 'ArrowRight') {
+      e.preventDefault();
+      stopPlay();
+      if (curStep < steps.length - 1) { curStep++; renderStep(curStep); }
+    }
+  });
+
+  /* ==================== Mode Switching ==================== */
+  function setMode(mode) {
+    stopPlay();
+    wbMode = mode;
+    document.querySelectorAll('#modeSwitch button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+    document.getElementById('dsuControls').style.display = mode === 'dsu' ? 'flex' : 'none';
+    document.getElementById('mstControls').style.display = mode === 'mst' ? 'flex' : 'none';
+    document.getElementById('faPanel').style.display = mode === 'dsu' ? 'block' : 'none';
+    document.getElementById('mstEdgePanel').style.display = mode === 'mst' ? 'block' : 'none';
+
+    if (mode === 'dsu') {
+      document.getElementById('st1L').textContent = '连通分量';
+      document.getElementById('st2L').textContent = '最大树高';
+      document.getElementById('st3L').textContent = '累计跳步';
+      document.getElementById('legendBar').innerHTML = `
+        <span><i style="background:var(--ok-soft);border-color:var(--ok)"></i>老大(根)</span>
+        <span><i style="background:var(--accent);border-color:var(--accent)"></i>当前访问</span>
+        <span><i style="background:var(--accent-soft);border-color:var(--accent)"></i>查找路径</span>
+        <span><i style="background:var(--purple-soft);border-color:var(--purple)"></i>路径压缩直连</span>
+      `;
+      renderCodeBox(CODE_DSU, 0);
+    } else {
+      document.getElementById('st1L').textContent = '已选边数';
+      document.getElementById('st2L').textContent = 'MST 总权值';
+      document.getElementById('st3L').textContent = '跳过成环边';
+      document.getElementById('legendBar').innerHTML = `
+        <span><i class="l-line" style="border-color:var(--accent)"></i>正在考察</span>
+        <span><i class="l-line" style="border-color:var(--ok)"></i>选中加入 MST</span>
+        <span><i class="l-line" style="border-color:var(--err);border-style:dashed"></i>会成环(跳过)</span>
+        <span>节点同色 = 同一连通块</span>
+      `;
+      renderCodeBox(CODE_MST, 0);
+    }
+  }
+
+  document.querySelectorAll('#modeSwitch button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const m = btn.dataset.mode;
+      if (m === wbMode) return;
+      setMode(m);
+      if (m === 'dsu') resetDsu();
+      else resetMst();
+    });
+  });
+
+  /* ==================== DSU Engine & Trace Generator ==================== */
+  function dsuStats(fa) {
+    let comps = 0, maxH = 1;
+    for (let i = 1; i <= DSU_N; i++) {
+      if (fa[i] === i) comps++;
+      let d = 1, cur = i, guard = 0;
+      while (fa[cur] !== cur && guard++ < DSU_N + 2) { cur = fa[cur]; d++; }
+      if (d > maxH) maxH = d;
+    }
+    return { comps, maxH };
+  }
+
+  function snapDsu(fa, rk, opts) {
+    const st = dsuStats(fa);
+    return {
+      mode: 'dsu',
+      fa: fa.slice(),
+      rk: rk.slice(),
+      comps: st.comps,
+      maxH: st.maxH,
+      hops: opts.hops ?? dsuTotalHops,
+      nodeStates: opts.nodeStates || {},
+      edgeStates: opts.edgeStates || {},
+      changedFa: opts.changedFa || [],
+      text: opts.text || '',
+      tag: opts.tag || 'DSU',
+      tone: opts.tone || '',
+      line: opts.line || 0
+    };
+  }
+
+  function resetDsu() {
+    dsuFa = Array.from({ length: DSU_N + 1 }, (_, i) => i);
+    dsuRk = Array(DSU_N + 1).fill(0);
+    dsuTotalHops = 0;
+    loadTrace([snapDsu(dsuFa, dsuRk, {
+      text: `已初始化 ${DSU_N} 个独立节点，每个人的老大都是自己（fa[i] = i）。`,
+      tag: 'INIT',
+      tone: 'is-ok',
+      line: 0
+    })], false);
+  }
+
+  function recordFindSteps(trace, fa, rk, x, useCompress, labelPrefix) {
+    const path = [];
+    let cur = x;
+    const ns = {};
+    const es = {};
+    while (true) {
+      path.push(cur);
+      ns[cur] = 'cur';
+      if (path.length > 1) {
+        const prev = path[path.length - 2];
+        ns[prev] = 'path';
+        es[`${prev}->${cur}`] = 'on-path';
+      }
+      if (fa[cur] === cur) {
+        ns[cur] = 'ok';
+        trace.push(snapDsu(fa, rk, {
+          hops: dsuTotalHops,
+          nodeStates: { ...ns },
+          edgeStates: { ...es },
+          text: `${labelPrefix}顺着父指针到达节点 ${cur}，发现 fa[${cur}] == ${cur}，找到老大 ${cur}！`,
+          tag: 'ROOT',
+          tone: 'is-ok',
+          line: 2
+        }));
+        break;
+      } else {
+        dsuTotalHops++;
+        trace.push(snapDsu(fa, rk, {
+          hops: dsuTotalHops,
+          nodeStates: { ...ns },
+          edgeStates: { ...es },
+          text: `${labelPrefix}访问节点 ${cur}，上级是 fa[${cur}] = ${fa[cur]}，继续向上爬（跳步 +1）…`,
+          tag: 'FIND',
+          line: 3
+        }));
+        cur = fa[cur];
+      }
+    }
+    const rootId = cur;
+    if (useCompress && path.length >= 3) {
+      // Compress nodes that are not root and not already direct child of root
+      const toCompress = path.slice(0, -2);
+      if (toCompress.length > 0) {
+        const compNs = { [rootId]: 'ok' };
+        const compEs = {};
+        for (const u of toCompress) {
+          fa[u] = rootId;
+          compNs[u] = 'rot';
+          compEs[`${u}->${rootId}`] = 'on-compress';
+        }
+        trace.push(snapDsu(fa, rk, {
+          hops: dsuTotalHops,
+          nodeStates: compNs,
+          edgeStates: compEs,
+          changedFa: toCompress,
+          text: `⚡ 路径压缩生效！将沿途节点 [${toCompress.join(', ')}] 的 fa[] 全部直接改为老大 ${rootId}，长链瞬间拍扁！`,
+          tag: 'COMPRESS',
+          tone: 'is-rot',
+          line: 4
+        }));
+      }
+    }
+    return rootId;
+  }
+
+  function runDsuFind(x) {
+    const useCompress = document.getElementById('chkCompress').checked;
+    const trace = [snapDsu(dsuFa, dsuRk, {
+      nodeStates: { [x]: 'cur' },
+      text: `准备执行 Find(${x})（路径压缩：${useCompress ? '开启' : '关闭'}）。`,
+      tag: 'FIND',
+      line: 1
+    })];
+    recordFindSteps(trace, dsuFa, dsuRk, x, useCompress, `Find(${x})：`);
+    loadTrace(trace, true);
+  }
+
+  function runDsuUnion(u, v) {
+    const useCompress = document.getElementById('chkCompress').checked;
+    const useRank = document.getElementById('chkRank').checked;
+    const trace = [snapDsu(dsuFa, dsuRk, {
+      nodeStates: { [u]: 'cur', [v]: 'cur' },
+      text: `准备执行 Union(${u}, ${v})：先分别找 ${u} 和 ${v} 的老大。`,
+      tag: 'UNION',
+      line: 6
+    })];
+    const ru = recordFindSteps(trace, dsuFa, dsuRk, u, useCompress, `找 ${u} 的老大：`);
+    const rv = recordFindSteps(trace, dsuFa, dsuRk, v, useCompress, `找 ${v} 的老大：`);
+    if (ru === rv) {
+      trace.push(snapDsu(dsuFa, dsuRk, {
+        nodeStates: { [ru]: 'warn', [u]: 'warn', [v]: 'warn' },
+        text: `find(${u}) = ${ru} 且 find(${v}) = ${rv}，两者老大相同，已经在同一个集合里，无需合并！`,
+        tag: 'SAME',
+        tone: 'is-warn',
+        line: 8
+      }));
+    } else {
+      let parent = ru, child = rv, note = '';
+      if (useRank) {
+        if (dsuRk[ru] < dsuRk[rv]) {
+          parent = rv; child = ru;
+          note = `按秩合并：rk[${ru}]=${dsuRk[ru]} < rk[${rv}]=${dsuRk[rv]}，让 ${ru} 挂到 ${rv} 下面`;
+        } else if (dsuRk[ru] > dsuRk[rv]) {
+          note = `按秩合并：rk[${ru}]=${dsuRk[ru]} > rk[${rv}]=${dsuRk[rv]}，让 ${rv} 挂到 ${ru} 下面`;
+        } else {
+          dsuRk[parent]++;
+          note = `两棵树秩相等，让 ${rv} 挂到 ${ru} 下面，并将 rk[${ru}] 加 1 变为 ${dsuRk[parent]}`;
+        }
+      } else {
+        note = `未启用按秩合并，直接令 fa[${child}] = ${parent}`;
+      }
+      dsuFa[child] = parent;
+      trace.push(snapDsu(dsuFa, dsuRk, {
+        nodeStates: { [parent]: 'ok', [child]: 'rot' },
+        edgeStates: { [`${child}->${parent}`]: 'on-ok' },
+        changedFa: [child],
+        text: `✅ 合并成功！${note}。`,
+        tag: 'MERGE',
+        tone: 'is-ok',
+        line: 10
+      }));
+    }
+    loadTrace(trace, true);
+  }
+
+  function makeChainState() {
+    dsuFa = [0, 1, 1, 2, 3, 4, 5, 7];
+    dsuRk = [0, 5, 4, 3, 2, 1, 0, 0];
+    dsuTotalHops = 0;
+  }
+
+  document.getElementById('btnUnion').addEventListener('click', () => {
+    runDsuUnion(Number(document.getElementById('dsuU').value), Number(document.getElementById('dsuV').value));
+  });
+  document.getElementById('btnFind').addEventListener('click', () => {
+    runDsuFind(Number(document.getElementById('dsuU').value));
+  });
+  document.getElementById('btnMakeChain').addEventListener('click', () => {
+    makeChainState();
+    loadTrace([snapDsu(dsuFa, dsuRk, {
+      text: '已构造退化长链 1 ← 2 ← 3 ← 4 ← 5 ← 6！试试开关“路径压缩”后执行 Find(6) 对比效果。',
+      tag: 'CHAIN',
+      tone: 'is-warn',
+      line: 0
+    })], false);
+    document.getElementById('dsuU').value = '6';
+  });
+  document.getElementById('btnResetDsu').addEventListener('click', resetDsu);
+
+  /* ==================== MST (Kruskal) Engine ==================== */
+  function snapMst(graph, sortedEdges, fa, edgeStates, opts) {
+    return {
+      mode: 'mst',
+      graph,
+      sortedEdges,
+      fa: fa.slice(),
+      edgeStates: edgeStates.slice(),
+      picked: opts.picked || 0,
+      totalW: opts.totalW || 0,
+      skipped: opts.skipped || 0,
+      hiNodes: opts.hiNodes || {},
+      text: opts.text || '',
+      tag: opts.tag || 'MST',
+      tone: opts.tone || '',
+      line: opts.line || 0
+    };
+  }
+
+  function resetMst() {
+    const g = curMstGraph;
+    const sorted = g.edges.map((e, i) => ({ ...e, oid: i })).sort((a, b) => a.w - b.w);
+    const fa = Array.from({ length: g.n + 1 }, (_, i) => i);
+    const est = sorted.map(() => 'pending');
+    loadTrace([snapMst(g, sorted, fa, est, {
+      text: `已加载 ${g.n} 点 ${g.edges.length} 边带权无向图。点击“▶ 运行 Kruskal”观看按权值从小到大选边！`,
+      tag: 'READY',
+      line: 0
+    })], false);
+  }
+
+  function buildKruskalTrace(graph) {
+    const n = graph.n;
+    const sorted = graph.edges.map((e, i) => ({ ...e, oid: i })).sort((a, b) => a.w - b.w);
+    const fa = Array.from({ length: n + 1 }, (_, i) => i);
+    const est = sorted.map(() => 'pending');
+    const findRoot = x => (fa[x] === x ? x : (fa[x] = findRoot(fa[x])));
+
+    let picked = 0, totalW = 0, skipped = 0;
+    const trace = [
+      snapMst(graph, sorted, fa, est, {
+        picked, totalW, skipped,
+        text: `第 1 步：将全部 ${sorted.length} 条边按权值从小到大排序，初始化 ${n} 个独立连通块（不同颜色）。`,
+        tag: 'SORT',
+        line: 1
+      })
+    ];
+
+    for (let i = 0; i < sorted.length; i++) {
+      const e = sorted[i];
+      est[i] = 'inspect';
+      const ru = findRoot(e.u);
+      const rv = findRoot(e.v);
+
+      trace.push(snapMst(graph, sorted, fa, est, {
+        picked, totalW, skipped,
+        hiNodes: { [e.u]: 'cur', [e.v]: 'cur' },
+        text: `考察第 ${i + 1} 轻的边 (${e.u}, ${e.v})，权值 w = ${e.w}。查并查集：find(${e.u}) = ${ru}，find(${e.v}) = ${rv}。`,
+        tag: 'CHECK',
+        line: 3
+      }));
+
+      if (ru === rv) {
+        est[i] = 'skipped';
+        skipped++;
+        trace.push(snapMst(graph, sorted, fa, est, {
+          picked, totalW, skipped,
+          hiNodes: { [e.u]: 'warn', [e.v]: 'warn' },
+          text: `✕ find(${e.u}) == find(${e.v}) == ${ru}！两点早已连通（同色），选边 (${e.u}, ${e.v}) 会形成环，果断跳过！`,
+          tag: 'CYCLE',
+          tone: 'is-warn',
+          line: 4
+        }));
+      } else {
+        fa[rv] = ru;
+        // flatten all for clean color display
+        for (let k = 1; k <= n; k++) findRoot(k);
+        est[i] = 'selected';
+        picked++;
+        totalW += e.w;
+        trace.push(snapMst(graph, sorted, fa, est, {
+          picked, totalW, skipped,
+          hiNodes: { [e.u]: 'ok', [e.v]: 'ok' },
+          text: `✓ 代表元不同（${ru} ≠ ${rv}），安全选中边 (${e.u}, ${e.v})！合并两个连通块，MST 总权值 = ${totalW}（已选 ${picked}/${n - 1}）。`,
+          tag: 'PICK',
+          tone: 'is-ok',
+          line: 6
+        }));
+        if (picked === n - 1) {
+          trace.push(snapMst(graph, sorted, fa, est, {
+            picked, totalW, skipped,
+            text: `🎉 已选满 n - 1 = ${n - 1} 条边，所有顶点已连通！最小生成树构造完成，最小总权值为 ${totalW}。`,
+            tag: 'DONE',
+            tone: 'is-ok',
+            line: 7
+          }));
+          break;
+        }
+      }
+    }
+    return trace;
+  }
+
+  document.getElementById('mstPreset').addEventListener('change', e => {
+    const v = e.target.value;
+    curMstGraph = v === 'rand6' ? makeRandomMstGraph() : MST_PRESETS[v];
+    resetMst();
+  });
+  document.getElementById('btnRunKruskal').addEventListener('click', () => {
+    loadTrace(buildKruskalTrace(curMstGraph), true);
+  });
+  document.getElementById('btnResetMst').addEventListener('click', resetMst);
+
+  /* ==================== SVG Rendering ==================== */
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function computeForestLayout(fa) {
+    const children = Array.from({ length: DSU_N + 1 }, () => []);
+    const roots = [];
+    for (let i = 1; i <= DSU_N; i++) {
+      if (fa[i] === i) roots.push(i);
+      else children[fa[i]].push(i);
+    }
+
+    const subW = Array(DSU_N + 1).fill(1);
+    function calcW(u) {
+      if (!children[u].length) { subW[u] = 1; return 1; }
+      let s = 0;
+      for (const c of children[u]) s += calcW(c);
+      subW[u] = Math.max(1, s);
+      return subW[u];
+    }
+    let totalUnits = 0;
+    for (const r of roots) totalUnits += calcW(r);
+
+    // Compute max depth to scale vertical gap cleanly
+    let maxD = 0;
+    function calcD(u, d) {
+      if (d > maxD) maxD = d;
+      for (const c of children[u]) calcD(c, d + 1);
+    }
+    for (const r of roots) calcD(r, 0);
+
+    const W = 640, H = 315;
+    const padX = 42;
+    const usableW = W - padX * 2;
+    const stepY = maxD <= 2 ? 78 : Math.min(68, Math.floor((H - 80) / Math.max(1, maxD)));
+    const startY = maxD <= 1 ? 100 : 48;
+
+    const pos = {};
+    let cursor = 0;
+    function place(u, depth, unitStart, unitSpan) {
+      const cx = padX + ((unitStart + unitSpan / 2) / Math.max(1, totalUnits)) * usableW;
+      const cy = startY + depth * stepY;
+      pos[u] = { x: Math.round(cx), y: Math.round(cy) };
+      let cStart = unitStart;
+      for (const c of children[u]) {
+        place(c, depth + 1, cStart, subW[c]);
+        cStart += subW[c];
+      }
+    }
+    for (const r of roots) {
+      place(r, 0, cursor, subW[r]);
+      cursor += subW[r];
+    }
+    return { pos, roots };
+  }
+
+  function renderDsuSvg(step) {
+    const svg = document.getElementById('mainSvg');
+    const { pos, roots } = computeForestLayout(step.fa);
+    const rootSet = new Set(roots);
+
+    let html = `
+      <defs>
+        <marker id="arrDef" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,1 L9,5 L0,9 z" fill="var(--line-strong)"/>
+        </marker>
+        <marker id="arrPath" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,1 L9,5 L0,9 z" fill="var(--accent)"/>
+        </marker>
+        <marker id="arrComp" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,1 L9,5 L0,9 z" fill="var(--purple)"/>
+        </marker>
+        <marker id="arrOk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,1 L9,5 L0,9 z" fill="var(--ok)"/>
+        </marker>
+      </defs>
+    `;
+
+    // Edges: child -> parent
+    for (let u = 1; u <= DSU_N; u++) {
+      const p = step.fa[u];
+      if (p === u) continue;
+      const a = pos[u], b = pos[p];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const r = 21;
+      const x1 = a.x + (dx / dist) * r;
+      const y1 = a.y + (dy / dist) * r;
+      const x2 = b.x - (dx / dist) * (r + 3);
+      const y2 = b.y - (dy / dist) * (r + 3);
+      const st = step.edgeStates[`${u}->${p}`] || '';
+      const marker = st === 'on-path' ? 'url(#arrPath)' : st === 'on-compress' ? 'url(#arrComp)' : st === 'on-ok' ? 'url(#arrOk)' : 'url(#arrDef)';
+      html += `<line class="d-edge ${st}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" marker-end="${marker}"/>`;
+    }
+
+    // Nodes
+    for (let u = 1; u <= DSU_N; u++) {
+      const { x, y } = pos[u];
+      const isRoot = rootSet.has(u);
+      const stateCls = step.nodeStates[u] || (isRoot ? 'ok' : '');
+      html += `<g class="t-node ${stateCls}" data-node="${u}" transform="translate(${x}, ${y})">`;
+      if (isRoot) {
+        html += `<text x="0" y="-26" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ok)">老大</text>`;
+      }
+      html += `<circle class="circle" r="19"/>`;
+      html += `<text class="key-txt" y="1">${u}</text>`;
+      html += `<rect class="meta-bg" x="-22" y="21" width="44" height="14" rx="4"/>`;
+      html += `<text class="meta-txt" y="31">fa=${step.fa[u]}</text>`;
+      html += `</g>`;
+    }
+
+    svg.innerHTML = html;
+
+    // Click node to trigger Find(u)
+    svg.querySelectorAll('.t-node').forEach(g => {
+      g.addEventListener('click', () => {
+        const id = Number(g.dataset.node);
+        document.getElementById('dsuU').value = String(id);
+        runDsuFind(id);
+      });
+    });
+  }
+
+  function renderMstSvg(step) {
+    const svg = document.getElementById('mainSvg');
+    const g = step.graph;
+    const nodeMap = {};
+    for (const nd of g.nodes) nodeMap[nd.id] = nd;
+
+    // Determine component root for each node for coloring
+    const getRoot = x => {
+      let c = x, guard = 0;
+      while (step.fa[c] !== c && guard++ < g.n + 2) c = step.fa[c];
+      return c;
+    };
+
+    let html = '';
+
+    // Edges first
+    step.sortedEdges.forEach((e, idx) => {
+      const a = nodeMap[e.u], b = nodeMap[e.v];
+      const st = step.edgeStates[idx];
+      const cls = st === 'pending' ? '' : st;
+      html += `<line class="m-edge ${cls}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`;
+    });
+
+    // Weight pills on top of edges
+    step.sortedEdges.forEach((e, idx) => {
+      const a = nodeMap[e.u], b = nodeMap[e.v];
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      const st = step.edgeStates[idx];
+      const cls = st === 'pending' ? '' : st;
+      html += `<g class="w-pill ${cls}" transform="translate(${mx.toFixed(1)}, ${my.toFixed(1)})">`;
+      html += `<rect x="-12" y="-10" width="24" height="20" rx="6"/>`;
+      html += `<text y="0.5">${e.w}</text>`;
+      html += `</g>`;
+    });
+
+    // Nodes colored by their DSU component
+    for (const nd of g.nodes) {
+      const r = getRoot(nd.id);
+      const col = COMP_COLORS[(r - 1) % COMP_COLORS.length];
+      const hi = step.hiNodes[nd.id] || '';
+      const strokeW = hi ? 3.5 : 2.6;
+      const strokeCol = hi === 'cur' ? 'var(--accent)' : hi === 'ok' ? 'var(--ok)' : hi === 'warn' ? 'var(--err)' : col.stroke;
+      html += `<g class="t-node" transform="translate(${nd.x}, ${nd.y})">`;
+      html += `<circle r="19" fill="${col.fill}" stroke="${strokeCol}" stroke-width="${strokeW}"/>`;
+      html += `<text class="key-txt" style="fill:${col.ink}" y="1">${nd.id}</text>`;
+      html += `</g>`;
+    }
+
+    svg.innerHTML = html;
+  }
+
+  function renderStep(idx) {
+    if (!steps.length) return;
+    const step = steps[idx];
+    document.getElementById('stepSlider').value = idx;
+    document.getElementById('stepCounter').textContent = `${idx + 1} / ${steps.length}`;
+    document.getElementById('btnPrev').disabled = idx === 0;
+    document.getElementById('btnNext').disabled = idx === steps.length - 1;
+
+    const nb = document.getElementById('narrationBox');
+    nb.className = 'narration-box ' + (step.tone || '');
+    document.getElementById('narrationText').textContent = step.text;
+    document.getElementById('narrationTag').textContent = step.tag;
+
+    if (step.mode === 'dsu') {
+      document.getElementById('st1').textContent = step.comps;
+      document.getElementById('st2').textContent = step.maxH;
+      document.getElementById('st3').textContent = step.hops;
+      renderDsuSvg(step);
+
+      // Render fa[] array cards
+      const changedSet = new Set(step.changedFa || []);
+      const faGrid = document.getElementById('faGrid');
+      let cells = '';
+      for (let i = 1; i <= DSU_N; i++) {
+        const isRoot = step.fa[i] === i;
+        const cls = changedSet.has(i) ? 'fa-cell changed' : isRoot ? 'fa-cell root-hi' : 'fa-cell';
+        cells += `<div class="${cls}"><div class="idx">i=${i}</div><div class="val">${step.fa[i]}</div><div class="rk">rk:${step.rk[i]}</div></div>`;
+      }
+      faGrid.innerHTML = cells;
+      renderCodeBox(CODE_DSU, step.line);
+    } else {
+      document.getElementById('st1').textContent = `${step.picked}/${step.graph.n - 1}`;
+      document.getElementById('st2').textContent = step.totalW;
+      document.getElementById('st3').textContent = step.skipped;
+      renderMstSvg(step);
+
+      // Render sorted edge list
+      const el = document.getElementById('edgeList');
+      el.innerHTML = step.sortedEdges.map((e, i) => {
+        const st = step.edgeStates[i];
+        const cls = st === 'pending' ? 'edge-row' : `edge-row ${st}`;
+        const badge = st === 'inspect' ? '考察中' : st === 'selected' ? '✓ 选中' : st === 'skipped' ? '✕ 成环' : '待审';
+        return `<div class="${cls}" id="erow-${i}"><span>(${e.u}, ${e.v})  w=${e.w}</span><span class="edge-st">${badge}</span></div>`;
+      }).join('');
+      const activeIdx = step.edgeStates.findIndex(s => s === 'inspect');
+      if (activeIdx >= 0) {
+        const rowEl = document.getElementById(`erow-${activeIdx}`);
+        if (rowEl) rowEl.scrollIntoView({ block: 'nearest' });
+      }
+      renderCodeBox(CODE_MST, step.line);
+    }
+  }
+
+  /* ==================== Micro-Lesson Guided Demos ==================== */
+  window.demoLesson1Build = function() {
+    setMode('dsu');
+    document.getElementById('chkCompress').checked = true;
+    document.getElementById('chkRank').checked = true;
+    dsuFa = Array.from({ length: DSU_N + 1 }, (_, i) => i);
+    dsuRk = Array(DSU_N + 1).fill(0);
+    dsuTotalHops = 0;
+
+    const trace = [snapDsu(dsuFa, dsuRk, {
+      text: '初始状态：7 个节点各自为政（fa[i] = i），共 7 个连通分量。',
+      tag: 'INIT', line: 0
+    })];
+    const pairs = [[1, 2], [2, 3], [4, 5]];
+    for (const [u, v] of pairs) {
+      const ru = recordFindSteps(trace, dsuFa, dsuRk, u, true, `Union(${u},${v}) 查 ${u}：`);
+      const rv = recordFindSteps(trace, dsuFa, dsuRk, v, true, `Union(${u},${v}) 查 ${v}：`);
+      if (ru !== rv) {
+        let p = ru, c = rv;
+        if (dsuRk[ru] < dsuRk[rv]) { p = rv; c = ru; }
+        else if (dsuRk[ru] === dsuRk[rv]) dsuRk[p]++;
+        dsuFa[c] = p;
+        trace.push(snapDsu(dsuFa, dsuRk, {
+          nodeStates: { [p]: 'ok', [c]: 'rot' },
+          edgeStates: { [`${c}->${p}`]: 'on-ok' },
+          changedFa: [c],
+          text: `合并 (${u}, ${v})：将 ${c} 挂到老大 ${p} 下面！当前连通分量减少 1。`,
+          tag: 'MERGE', tone: 'is-ok', line: 10
+        }));
+      }
+    }
+    loadTrace(trace, true);
+  };
+
+  window.demoLesson1Find = function() {
+    setMode('dsu');
+    if (dsuFa[3] === 3) {
+      dsuFa = [0, 1, 1, 1, 4, 4, 6, 7];
+      dsuRk = [0, 1, 0, 0, 1, 0, 0, 0];
+    }
+    document.getElementById('dsuU').value = '3';
+    runDsuFind(3);
+  };
+
+  window.demoLesson2Chain = function(compress) {
+    setMode('dsu');
+    document.getElementById('chkCompress').checked = compress;
+    makeChainState();
+    document.getElementById('dsuU').value = '6';
+    const trace = [snapDsu(dsuFa, dsuRk, {
+      nodeStates: { 6: 'cur' },
+      text: `准备在长链 1←2←3←4←5←6 上执行 Find(6)（路径压缩：${compress ? '✅ 开启' : '❌ 关闭'}）。`,
+      tag: 'CHAIN', tone: compress ? '' : 'is-warn', line: 1
+    })];
+    recordFindSteps(trace, dsuFa, dsuRk, 6, compress, 'Find(6)：');
+    if (!compress) {
+      trace.push(snapDsu(dsuFa, dsuRk, {
+        nodeStates: { 1: 'ok', 6: 'warn' },
+        text: '没有路径压缩：虽然找到了老大 1，但长链丝毫没变短，下次查 Find(6) 还得再爬 5 步！',
+        tag: 'SLOW', tone: 'is-warn', line: 2
+      }));
+    }
+    loadTrace(trace, true);
+  };
+
+  window.demoLesson3Kruskal = function(presetKey) {
+    setMode('mst');
+    document.getElementById('mstPreset').value = presetKey;
+    curMstGraph = MST_PRESETS[presetKey];
+    loadTrace(buildKruskalTrace(curMstGraph), true);
+  };
+
+  window.demoLesson4Cycle = function() {
+    setMode('mst');
+    document.getElementById('mstPreset').value = 'classic6';
+    curMstGraph = MST_PRESETS.classic6;
+    const trace = buildKruskalTrace(curMstGraph);
+    loadTrace(trace, false);
+    // Jump directly to first CYCLE step so learner immediately sees it!
+    const cycleIdx = trace.findIndex(s => s.tag === 'CYCLE');
+    if (cycleIdx >= 0) {
+      curStep = cycleIdx;
+      renderStep(curStep);
+      showToast('已定位到第一条被跳过的成环边！可用 ←/→ 前后对比');
+    }
+  };
+
+  window.demoLesson5Enemy = function() {
+    setMode('dsu');
+    document.getElementById('chkCompress').checked = true;
+    document.getElementById('chkRank').checked = true;
+    dsuFa = Array.from({ length: DSU_N + 1 }, (_, i) => i);
+    dsuRk = Array(DSU_N + 1).fill(0);
+    dsuTotalHops = 0;
+    const trace = [snapDsu(dsuFa, dsuRk, {
+      text: '模拟《关押罪犯》：假设 1 与 2 敌对、2 与 3 敌对，根据“敌人的敌人是朋友”，1 和 3 必须分到同一监狱！',
+      tag: 'P1525', line: 0
+    })];
+    dsuFa[3] = 1; dsuRk[1] = 1;
+    trace.push(snapDsu(dsuFa, dsuRk, {
+      nodeStates: { 1: 'ok', 3: 'rot' },
+      edgeStates: { '3->1': 'on-ok' },
+      changedFa: [3],
+      text: '将 1 和 3 合并进同一同类集合（fa[3] = 1），2 在对立监狱。',
+      tag: 'SAME-JAIL', tone: 'is-ok', line: 10
+    }));
+    trace.push(snapDsu(dsuFa, dsuRk, {
+      nodeStates: { 1: 'warn', 3: 'warn' },
+      edgeStates: { '3->1': 'on-path' },
+      text: '此时又来了一条怨气边 (1, 3)：查 find(1) == find(3) == 1，说明 1 和 3 已被迫关在同一监狱，冲突不可避免，直接输出当前怨气值！',
+      tag: 'CONFLICT', tone: 'is-warn', line: 8
+    }));
+    loadTrace(trace, true);
+  };
+
+  /* ==================== Boot ==================== */
+  setMode('dsu');
+  resetDsu();
+})();
+</script>
+</body>
+</html>

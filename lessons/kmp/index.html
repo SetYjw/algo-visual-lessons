@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KMP 字符串匹配与前缀函数 — 交互式微课 · 实时滑动动画 · 实战题解</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root {
+  --bg: #EEF1F6;
+  --panel: #FFFFFF;
+  --sunk: #F5F7FA;
+  --ink: #18202E;
+  --muted: #5C6779;
+  --line: #D9DFE8;
+  --line-strong: #A9B3C3;
+  --accent: #2B57E0;
+  --accent-soft: #E1E8FC;
+  --on-accent: #FFFFFF;
+  --ok: #17905F;
+  --ok-soft: #DAF1E6;
+  --warn: #B8700C;
+  --warn-soft: #FBEBD2;
+  --err: #C93535;
+  --err-soft: #FCE4E4;
+  --purple: #7A42D9;
+  --purple-soft: #EFE6FD;
+  --skip: #96A0B2;
+  --kw: #8A3FC0;
+  --fn: #1D6FB0;
+  --cm: #7A8699;
+  --num: #C05621;
+  --shadow: 0 2px 12px rgba(24, 32, 46, 0.06);
+  --font-ui: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-display: "Space Grotesk", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1219; --panel: #161C26; --sunk: #11161F; --ink: #E5EAF2; --muted: #93A0B4;
+    --line: #273041; --line-strong: #435069; --accent: #7C9BFF; --accent-soft: #1D2847; --on-accent: #0A1020;
+    --ok: #3FC58F; --ok-soft: #123326; --warn: #F0A53A; --warn-soft: #382810;
+    --err: #FF7676; --err-soft: #3A1A1E; --purple: #B894FF; --purple-soft: #281D42;
+    --skip: #5C667A; --kw: #C99BF5; --fn: #7DB8F0; --cm: #6E7B91; --num: #F6AD55;
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0E1219; --panel: #161C26; --sunk: #11161F; --ink: #E5EAF2; --muted: #93A0B4;
+  --line: #273041; --line-strong: #435069; --accent: #7C9BFF; --accent-soft: #1D2847; --on-accent: #0A1020;
+  --ok: #3FC58F; --ok-soft: #123326; --warn: #F0A53A; --warn-soft: #382810;
+  --err: #FF7676; --err-soft: #3A1A1E; --purple: #B894FF; --purple-soft: #281D42;
+  --skip: #5C667A; --kw: #C99BF5; --fn: #7DB8F0; --cm: #6E7B91; --num: #F6AD55;
+  --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14.5px;
+  line-height: 1.72;
+}
+
+/* ==================== Topbar ==================== */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 11px; }
+.brand-badge {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  color: #fff; display: grid; place-items: center;
+  font-family: var(--font-mono); font-weight: 700; font-size: 12.5px; flex: none;
+}
+.brand h1 { font-family: var(--font-display); font-size: 17px; margin: 0; line-height: 1.2; }
+.brand p { margin: 0; font-size: 11.5px; color: var(--muted); }
+
+.course-pills {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.lesson-pill {
+  border: 1px solid var(--line);
+  background: var(--sunk);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .15s;
+}
+.lesson-pill:hover { border-color: var(--accent); color: var(--ink); }
+.lesson-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.lesson-pill.done:not(.active) {
+  border-color: var(--ok);
+  color: var(--ok);
+  background: var(--ok-soft);
+}
+.top-right { display: flex; align-items: center; gap: 8px; }
+.progress-pill {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 7px;
+}
+.theme-btn {
+  background: var(--sunk); border: 1px solid var(--line-strong);
+  border-radius: 7px; padding: 5px 10px; font-size: 12.5px;
+  cursor: pointer; color: var(--ink); font-family: inherit;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ==================== Main Split Classroom Layout ==================== */
+.classroom {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 18px 20px 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 1160px) {
+  .classroom { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+/* ==================== LEFT: Interactive Micro-Lesson ==================== */
+.lesson-pane { display: none; animation: fadeIn .22s ease; }
+.lesson-pane.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.lesson-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  display: inline-block;
+}
+.badge.blue { background: var(--accent-soft); color: var(--accent); }
+.badge.green { background: var(--ok-soft); color: var(--ok); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.badge.purple { background: var(--purple-soft); color: var(--purple); }
+.badge.red { background: var(--err-soft); color: var(--err); }
+
+.lesson-title {
+  font-family: var(--font-display);
+  font-size: 23px;
+  line-height: 1.3;
+  margin: 0 0 12px;
+}
+.lesson-lead {
+  color: var(--muted);
+  font-size: 14.5px;
+  margin: 0 0 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lesson-body h3 {
+  font-family: var(--font-display);
+  font-size: 16.5px;
+  margin: 20px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lesson-body p { margin: 0 0 10px; }
+.lesson-body ul, .lesson-body ol { margin: 0 0 12px; padding-left: 20px; }
+.lesson-body li { margin-bottom: 6px; }
+
+.math { font-family: "Times New Roman", Georgia, serif; font-style: italic; font-size: 1.06em; }
+.code-inline {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.formula-box {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 14px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  margin: 12px 0;
+}
+
+.callout {
+  padding: 11px 14px;
+  border-radius: 9px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  margin: 12px 0;
+  font-size: 13.8px;
+}
+.callout.warn { border-left-color: var(--warn); background: color-mix(in srgb, var(--warn-soft) 45%, var(--sunk)); }
+.callout.ok { border-left-color: var(--ok); background: color-mix(in srgb, var(--ok-soft) 45%, var(--sunk)); }
+.callout.err { border-left-color: var(--err); background: color-mix(in srgb, var(--err-soft) 45%, var(--sunk)); }
+.callout.purple { border-left-color: var(--purple); background: color-mix(in srgb, var(--purple-soft) 45%, var(--sunk)); }
+
+.try-card {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--panel));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.try-card .try-info { flex: 1 1 220px; }
+.try-card .try-title { font-weight: 700; font-size: 13.5px; color: var(--accent); margin-bottom: 2px; }
+.try-card .try-desc { font-size: 12.8px; color: var(--muted); }
+.try-btns { display: flex; gap: 7px; flex-wrap: wrap; }
+
+.diagram-box {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 12px 0;
+  text-align: center;
+}
+.diagram-box svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+.diagram-cap { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+/* Quiz Box */
+.quiz-box {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+}
+.quiz-head {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--purple);
+  margin-bottom: 6px;
+}
+.quiz-q { font-weight: 600; font-size: 14px; margin-bottom: 10px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 7px; }
+.quiz-opt {
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.quiz-opt:hover { border-color: var(--accent); }
+.quiz-opt.correct { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); font-weight: 600; }
+.quiz-opt.wrong { background: var(--err-soft); border-color: var(--err); color: var(--err); }
+.quiz-fb {
+  margin-top: 10px;
+  font-size: 13px;
+  padding: 8px 11px;
+  border-radius: 7px;
+  display: none;
+}
+.quiz-fb.show { display: block; }
+.quiz-fb.ok { background: var(--ok-soft); color: var(--ok); }
+.quiz-fb.err { background: var(--err-soft); color: var(--err); }
+
+.lesson-footer {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.table-wrap { overflow-x: auto; margin: 10px 0; }
+table.cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.cmp-table th, table.cmp-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+table.cmp-table th { background: var(--sunk); font-size: 11.5px; color: var(--muted); font-weight: 700; }
+
+/* Problem Tabs inside Lesson 5 */
+.prob-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+.prob-tab {
+  padding: 6px 12px; border-radius: 7px; border: 1px solid var(--line-strong);
+  background: var(--sunk); color: var(--muted); font-weight: 600; font-size: 12.8px; cursor: pointer;
+}
+.prob-tab.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.prob-pane { display: none; }
+.prob-pane.on { display: block; }
+.code-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 12px; background: var(--sunk);
+  border: 1px solid var(--line); border-bottom: none;
+  border-radius: 8px 8px 0 0; font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+}
+pre.cpp-code {
+  margin: 0 0 12px; padding: 11px 13px; background: var(--sunk);
+  border: 1px solid var(--line); border-radius: 0 0 8px 8px;
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.56;
+  overflow-x: auto; max-height: 410px;
+}
+
+/* ==================== RIGHT: Sticky Interactive Workbench ==================== */
+.workbench-sticky {
+  position: sticky;
+  top: 70px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (max-width: 1160px) {
+  .workbench-sticky { position: static; }
+}
+
+.wb-top { display: flex; flex-direction: column; gap: 10px; }
+.wb-row { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+
+.seg-switch {
+  display: inline-flex; background: var(--sunk);
+  border: 1px solid var(--line-strong); border-radius: 8px; padding: 2px; gap: 2px;
+}
+.seg-switch button {
+  border: none; background: transparent; padding: 5px 11px; border-radius: 6px;
+  font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; font-family: inherit;
+}
+.seg-switch button.on { background: var(--accent); color: var(--on-accent); }
+
+input[type="text"], select {
+  font-family: var(--font-mono); font-size: 12.5px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 7px; padding: 6px 9px; outline: none;
+}
+input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+.field-group {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 600; color: var(--muted);
+}
+.field-group input[type="text"] { width: 150px; letter-spacing: 0.04em; }
+.field-group.text-field input[type="text"] { width: 195px; }
+.field-group.hidden { display: none; }
+
+.btn {
+  font-family: var(--font-ui); font-size: 12.5px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 7px; padding: 6px 11px;
+  cursor: pointer; white-space: nowrap; transition: all .15s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); color: var(--on-accent); }
+.btn.sm { padding: 4px 9px; font-size: 12px; }
+.btn:disabled { opacity: 0.42; cursor: not-allowed; }
+
+/* ==================== KMP Alignment Stage ==================== */
+.stage-box {
+  position: relative;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 14px 18px;
+  overflow-x: auto;
+  min-height: 230px;
+}
+
+.stage-inner {
+  position: relative;
+  display: inline-block;
+  min-width: 100%;
+  padding-left: 52px;
+}
+
+.row-label {
+  position: absolute;
+  left: 0;
+  width: 44px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: right;
+  padding-right: 6px;
+  user-select: none;
+}
+
+.ptr-track {
+  position: relative;
+  height: 26px;
+  margin-bottom: 4px;
+}
+
+.ptr-pill {
+  position: absolute;
+  top: 0;
+  width: 38px;
+  height: 22px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.34s cubic-bezier(.22, 1, .36, 1), opacity 0.2s;
+  will-change: transform;
+}
+.ptr-pill.ptr-i {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.ptr-pill.ptr-i::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--accent);
+}
+.ptr-pill.ptr-j {
+  background: var(--purple);
+  color: #fff;
+  top: 4px;
+}
+.ptr-pill.ptr-j::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 5px solid var(--purple);
+}
+
+.char-row {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pat-slider {
+  position: relative;
+  margin-top: 12px;
+  transition: transform 0.38s cubic-bezier(.22, 1, .36, 1);
+  will-change: transform;
+}
+
+.cell-col {
+  width: 38px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.cell-idx {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--skip);
+  line-height: 1.1;
+  user-select: none;
+}
+.cell-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 2px solid var(--line-strong);
+  background: var(--panel);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s;
+  user-select: none;
+}
+
+.cell-box.st-matched {
+  background: var(--ok-soft);
+  border-color: var(--ok);
+  color: var(--ok);
+}
+.cell-box.st-match-now {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px var(--ok-soft);
+}
+.cell-box.st-hit {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--ok-soft);
+}
+.cell-box.st-mismatch {
+  background: var(--err-soft);
+  border-color: var(--err);
+  color: var(--err);
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--err) 22%, transparent);
+}
+.cell-box.st-border {
+  background: var(--purple-soft);
+  border-color: var(--purple);
+  color: var(--purple);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--purple) 22%, transparent);
+}
+.cell-box.st-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.border-banner {
+  margin-top: 10px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.border-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--purple-soft);
+  color: var(--purple);
+  border: 1px solid color-mix(in srgb, var(--purple) 40%, var(--line));
+  font-weight: 600;
+}
+.border-chip.ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--line));
+}
+
+.legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 4px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; border: 2px solid; }
+
+.narration-box {
+  background: var(--sunk); border: 1px solid var(--line);
+  border-left: 4px solid var(--accent); border-radius: 8px;
+  padding: 9px 12px; display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; min-height: 46px;
+}
+.narration-box.is-warn { border-left-color: var(--err); background: color-mix(in srgb, var(--err-soft) 50%, var(--sunk)); }
+.narration-box.is-rot { border-left-color: var(--purple); background: color-mix(in srgb, var(--purple-soft) 50%, var(--sunk)); }
+.narration-box.is-ok { border-left-color: var(--ok); background: color-mix(in srgb, var(--ok-soft) 50%, var(--sunk)); }
+.narration-text { font-size: 13px; font-weight: 500; line-height: 1.5; }
+.narration-tag {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  padding: 2px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); white-space: nowrap;
+}
+
+.playback-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.playback-bar input[type="range"] { flex: 1 1 110px; accent-color: var(--accent); }
+.step-counter { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); min-width: 60px; text-align: center; }
+
+/* Pi Array Table */
+.pi-table-wrap {
+  overflow-x: auto;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.pi-table-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+table.pi-tbl {
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+table.pi-tbl th, table.pi-tbl td {
+  border: 1px solid var(--line);
+  min-width: 30px;
+  height: 25px;
+  text-align: center;
+  padding: 0 5px;
+}
+table.pi-tbl th {
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 11px;
+}
+table.pi-tbl td.pi-val { font-weight: 700; background: var(--panel); transition: all .2s; }
+table.pi-tbl td.pi-val.hi-read { background: var(--purple-soft); color: var(--purple); border-color: var(--purple); }
+table.pi-tbl td.pi-val.hi-write { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); }
+table.pi-tbl td.pi-val.hi-cur { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+
+.wb-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 10px;
+}
+@media (max-width: 680px) { .wb-bottom-grid { grid-template-columns: 1fr; } }
+
+.mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+.stat-box { background: var(--sunk); border: 1px solid var(--line); border-radius: 7px; padding: 6px; text-align: center; }
+.stat-box .v { font-family: var(--font-mono); font-size: 15px; font-weight: 700; line-height: 1.2; }
+.stat-box .l { font-size: 10.5px; color: var(--muted); }
+
+.match-strip {
+  background: var(--sunk); border: 1px solid var(--line); border-radius: 7px;
+  padding: 6px 8px; font-family: var(--font-mono); font-size: 11.5px;
+  display: flex; flex-wrap: wrap; gap: 5px; align-items: center; min-height: 36px;
+}
+.match-pill {
+  padding: 2px 7px; border-radius: 5px;
+  background: var(--ok-soft); border: 1px solid var(--ok); color: var(--ok); font-weight: 700;
+}
+
+.code-box {
+  background: var(--sunk); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 0; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.54;
+  overflow-x: auto; max-height: 215px;
+}
+.c-line { display: flex; white-space: pre; padding-right: 10px; border-left: 3px solid transparent; }
+.c-line .ln { width: 24px; flex: none; text-align: right; padding-right: 7px; color: var(--skip); user-select: none; }
+.c-line.active { background: var(--accent-soft); border-left-color: var(--accent); font-weight: 600; }
+.c-line.active .ln { color: var(--accent); }
+.kw { color: var(--kw); } .fn { color: var(--fn); } .cm { color: var(--cm); font-style: italic; } .num { color: var(--num); }
+
+.toast {
+  position: fixed; right: 20px; bottom: 20px; background: var(--ink); color: var(--panel);
+  padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  opacity: 0; transform: translateY(10px); pointer-events: none; transition: all .2s; z-index: 99;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-badge">KMP</div>
+      <div>
+        <h1>KMP 字符串匹配与前缀函数</h1>
+        <p>零基础交互式微课 · Border 直觉 · 实时滑动动画 · 洛谷模板题解</p>
+      </div>
+    </div>
+
+    <nav class="course-pills" id="coursePills">
+      <button class="lesson-pill active" data-lesson="0">1. 暴力痛点</button>
+      <button class="lesson-pill" data-lesson="1">2. 核心顿悟</button>
+      <button class="lesson-pill" data-lesson="2">3. 前缀函数 &pi;</button>
+      <button class="lesson-pill" data-lesson="3">4. 匹配与复杂度</button>
+      <button class="lesson-pill" data-lesson="4">5. 实战题解</button>
+    </nav>
+
+    <div class="top-right">
+      <a class="theme-btn" href="../../index.html" style="text-decoration:none;">← 目录</a>
+      <span class="progress-pill" id="progressPill">进度 1/5</span>
+      <button class="theme-btn" id="themeBtn">🌓 主题</button>
+    </div>
+  </div>
+</header>
+
+<main class="classroom">
+
+  <!-- ==================== LEFT COLUMN: 5 MICRO-LESSONS ==================== -->
+  <section class="panel" id="lessonContainer">
+
+    <!-- LESSON 1 -->
+    <article class="lesson-pane active" data-lesson="0">
+      <div class="lesson-eyebrow"><span class="badge blue">第 1 课 / 共 5 课</span><span>动机与痛点</span></div>
+      <h2 class="lesson-title">暴力匹配为什么慢？</h2>
+      <p class="lesson-lead">给定一个长度为 <span class="math">n</span> 的文本串 <span class="math">T</span> 和长度为 <span class="math">m</span> 的模式串 <span class="math">P</span>，如何快速找出 <span class="math">P</span> 在 <span class="math">T</span> 中出现的所有位置？先看看最朴素的做法为什么会超时。</p>
+
+      <div class="lesson-body">
+        <h3>1. 朴素（暴力）匹配的做法</h3>
+        <p>我们把模式串 <span class="math">P</span> 对齐到文本串 <span class="math">T</span> 的起点 <span class="math">s</span> = 0，逐字符比较 <span class="code-inline">T[s + j]</span> 和 <span class="code-inline">P[j]</span>。一旦在某个位置发生<strong>失配</strong>，就把模式串往右挪 1 格（<span class="math">s</span> + 1），然后让文本串指针 <span class="code-inline">i</span> <strong>傻傻地回退</strong>到 <span class="math">s</span> + 1，模式串指针 <span class="code-inline">j</span> 归零，一切推倒重来。</p>
+
+        <div class="diagram-box">
+          <svg viewBox="0 0 520 135" width="500" height="130">
+            <text x="12" y="24" font-family="var(--font-mono)" font-size="12" fill="var(--muted)" font-weight="700">文本串 T</text>
+            <g transform="translate(80,8)" font-family="var(--font-mono)" font-size="14" font-weight="700">
+              <rect x="0" y="0" width="34" height="30" rx="5" fill="var(--ok-soft)" stroke="var(--ok)" stroke-width="1.6"/><text x="17" y="20" text-anchor="middle" fill="var(--ok)">a</text>
+              <rect x="38" y="0" width="34" height="30" rx="5" fill="var(--ok-soft)" stroke="var(--ok)" stroke-width="1.6"/><text x="55" y="20" text-anchor="middle" fill="var(--ok)">a</text>
+              <rect x="76" y="0" width="34" height="30" rx="5" fill="var(--ok-soft)" stroke="var(--ok)" stroke-width="1.6"/><text x="93" y="20" text-anchor="middle" fill="var(--ok)">a</text>
+              <rect x="114" y="0" width="34" height="30" rx="5" fill="var(--ok-soft)" stroke="var(--ok)" stroke-width="1.6"/><text x="131" y="20" text-anchor="middle" fill="var(--ok)">a</text>
+              <rect x="152" y="0" width="34" height="30" rx="5" fill="var(--err-soft)" stroke="var(--err)" stroke-width="2"/><text x="169" y="20" text-anchor="middle" fill="var(--err)">a</text>
+              <rect x="190" y="0" width="34" height="30" rx="5" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"/><text x="207" y="20" text-anchor="middle" fill="var(--ink)">a</text>
+              <rect x="228" y="0" width="34" height="30" rx="5" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"/><text x="245" y="20" text-anchor="middle" fill="var(--ink)">a</text>
+              <rect x="266" y="0" width="34" height="30" rx="5" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.4"/><text x="283" y="20" text-anchor="middle" fill="var(--ink)">b</text>
+            </g>
+
+            <text x="12" y="68" font-family="var(--font-mono)" font-size="12" fill="var(--muted)" font-weight="700">第 1 轮 P</text>
+            <g transform="translate(80,50)" font-family="var(--font-mono)" font-size="14" font-weight="700">
+              <rect x="0" y="0" width="34" height="30" rx="5" fill="var(--ok-soft)" stroke="var(--ok)" stroke-width="1.6"/><text x="17" y="20" text-anchor="middle" fill="var(--ok)">a</text>
+              <rect x="38" y="0" width="34" height="30" rx="5" fill="var(--ok-soft)" stroke="var(--ok)" stroke-width="1.6"/><text x="55" y="20" text-anchor="middle" fill="var(--ok)">a</text>
+              <rect x="76" y="0" width="34" height="30" rx="5" fill="var(--ok-soft)" stroke="var(--ok)" stroke-width="1.6"/><text x="93" y="20" text-anchor="middle" fill="var(--ok)">a</text>
+              <rect x="114" y="0" width="34" height="30" rx="5" fill="var(--ok-soft)" stroke="var(--ok)" stroke-width="1.6"/><text x="131" y="20" text-anchor="middle" fill="var(--ok)">a</text>
+              <rect x="152" y="0" width="34" height="30" rx="5" fill="var(--err-soft)" stroke="var(--err)" stroke-width="2"/><text x="169" y="20" text-anchor="middle" fill="var(--err)">b</text>
+            </g>
+
+            <path d="M 248 86 Q 190 120 135 88" fill="none" stroke="var(--err)" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrErr)"/>
+            <defs>
+              <marker id="arrErr" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,1 L9,5 L0,9 z" fill="var(--err)"/>
+              </marker>
+            </defs>
+            <text x="195" y="122" font-size="11.5" fill="var(--err)" font-weight="700" text-anchor="middle">暴力：i 回退到下标 1，前面 4 个 'a' 白比了！</text>
+          </svg>
+          <div class="diagram-cap">最坏情况：T = "aaaaaaab"，P = "aaaab" —— 每次都在最后一个字符失配，指针 i 反复回退</div>
+        </div>
+
+        <h3>2. 最坏时间复杂度：<span class="math">O</span>(<span class="math">n</span> &middot; <span class="math">m</span>)</h3>
+        <p>当 <span class="code-inline">T = "aaaa...ab"</span>（长度 <span class="math">n</span>）、<span class="code-inline">P = "aaa...ab"</span>（长度 <span class="math">m</span>）时，每个起始位置都要成功匹配前 <span class="math">m</span> &minus; 1 个 <span class="code-inline">'a'</span>，然后在最后一个 <span class="code-inline">'b'</span> 处功亏一篑。</p>
+        <div class="callout err">
+          <strong>竞赛里的致命后果：</strong>如果 <span class="math">n</span> = 10<sup>6</sup>，<span class="math">m</span> = 5 &times; 10<sup>5</sup>，暴力匹配最多需要约 2.5 &times; 10<sup>11</sup> 次比较，在 1 秒时限（约 10<sup>8</sup> 次运算）下直接 <strong>TLE（超时）</strong>！
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 1：看 KMP 如何秒杀“暴力杀手”</div>
+            <div class="try-desc">把 <span class="code-inline">T="aaaaaaaaaab"</span>、<span class="code-inline">P="aaaab"</span> 载入右侧演示台，观察指针 <span class="code-inline">i</span> 是如何一次都不回退、直接滑过所有重复 <span class="code-inline">'a'</span> 的！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="runPreset('killer')">▶ 演示暴力杀手样例</button>
+            <button class="btn sm" onclick="runPreset('classic')">▶ 演示经典滑动</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="0">
+          <div class="quiz-head">随堂小测 1 / 4</div>
+          <div class="quiz-q">暴力字符串匹配在最坏情况下时间复杂度达到 <span class="math">O</span>(<span class="math">n</span>&middot;<span class="math">m</span>)，根本原因是什么？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" data-ok="0">A. 因为模式串 P 太长，内存放不下</button>
+            <button class="quiz-opt" data-ok="1">B. 每次失配后文本串指针 i 都会回退并丢弃“前面已经匹配成功”的信息</button>
+            <button class="quiz-opt" data-ok="0">C. 因为每个字符的 ASCII 比较本身需要 O(m) 时间</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <span style="font-size:12px;color:var(--muted);">完成本课后点击右侧继续</span>
+        <button class="btn primary" onclick="goLesson(1)">下一课：KMP 的核心顿悟 →</button>
+      </div>
+    </article>
+
+    <!-- LESSON 2 -->
+    <article class="lesson-pane" data-lesson="1">
+      <div class="lesson-eyebrow"><span class="badge purple">第 2 课 / 共 5 课</span><span>核心顿悟</span></div>
+      <h2 class="lesson-title">永不回退的 <span class="code-inline">i</span> 与“真前后缀（Border）”</h2>
+      <p class="lesson-lead">KMP 算法（Knuth–Morris–Pratt）的惊人之处在于：<strong>文本串指针 <span class="code-inline">i</span> 从头走到尾，永远不会往回退哪怕一步！</strong>凭什么？</p>
+
+      <div class="lesson-body">
+        <h3>1. 失配的那一刻，其实我们掌握了“上帝视角”</h3>
+        <p>假设在 <span class="code-inline">T[i] &ne; P[j]</span> 处失配了。虽然这一格没对上，但<strong>前面的 <span class="math">j</span> 个字符已经全部匹配成功</strong>！也就是说，文本串里紧挨在 <span class="code-inline">T[i]</span> 左边的那段子串，和模式串的前缀 <span class="code-inline">P[0..j-1]</span> 是<strong>一模一样</strong>的。</p>
+        <p>既然已经知道 <span class="code-inline">T[i-j .. i-1]</span> 长什么样，我们根本不用回头重看文本串！只要把模式串 <span class="math">P</span> 往右滑动，滑到<strong>模式串开头的一段（真前缀）</strong>刚好能和<strong>已匹配部分的结尾（真后缀）</strong>重合为止！</p>
+
+        <h3>2. 什么是“真前后缀”与 Border？</h3>
+        <ul>
+          <li><strong>真前缀（Proper Prefix）</strong>：从开头截取、但<strong>不能等于整个字符串本身</strong>的前缀。例如 <span class="code-inline">"ababa"</span> 的真前缀有 <span class="code-inline">"a"</span>、<span class="code-inline">"ab"</span>、<span class="code-inline">"aba"</span>、<span class="code-inline">"abab"</span>。</li>
+          <li><strong>真后缀（Proper Suffix）</strong>：从结尾截取、但<strong>不能等于整个字符串本身</strong>的后缀。例如 <span class="code-inline">"ababa"</span> 的真后缀有 <span class="code-inline">"a"</span>、<span class="code-inline">"ba"</span>、<span class="code-inline">"aba"</span>、<span class="code-inline">"baba"</span>。</li>
+          <li><strong>Border（公共真前后缀）</strong>：既是真前缀、又是真后缀的子串。例如 <span class="code-inline">"ababa"</span> 的 Border 有 <span class="code-inline">"a"</span>（长度 1）和 <span class="code-inline">"aba"</span>（长度 3），其中<strong>最长 Border 长度为 3</strong>。</li>
+        </ul>
+
+        <div class="diagram-box">
+          <svg viewBox="0 0 540 165" width="520" height="160">
+            <text x="8" y="25" font-family="var(--font-mono)" font-size="11.5" fill="var(--muted)" font-weight="700">文本 T</text>
+            <g transform="translate(68,8)" font-family="var(--font-mono)" font-size="14" font-weight="700">
+              <rect x="0" y="0" width="34" height="28" rx="5" fill="var(--ok-soft)" stroke="var(--ok)"/><text x="17" y="19" text-anchor="middle" fill="var(--ok)">a</text>
+              <rect x="38" y="0" width="34" height="28" rx="5" fill="var(--ok-soft)" stroke="var(--ok)"/><text x="55" y="19" text-anchor="middle" fill="var(--ok)">b</text>
+              <rect x="76" y="0" width="34" height="28" rx="5" fill="var(--purple-soft)" stroke="var(--purple)" stroke-width="2"/><text x="93" y="19" text-anchor="middle" fill="var(--purple)">a</text>
+              <rect x="114" y="0" width="34" height="28" rx="5" fill="var(--purple-soft)" stroke="var(--purple)" stroke-width="2"/><text x="131" y="19" text-anchor="middle" fill="var(--purple)">b</text>
+              <rect x="152" y="0" width="34" height="28" rx="5" fill="var(--purple-soft)" stroke="var(--purple)" stroke-width="2"/><text x="169" y="19" text-anchor="middle" fill="var(--purple)">a</text>
+              <rect x="190" y="0" width="34" height="28" rx="5" fill="var(--err-soft)" stroke="var(--err)" stroke-width="2"/><text x="207" y="19" text-anchor="middle" fill="var(--err)">b</text>
+              <rect x="228" y="0" width="34" height="28" rx="5" fill="var(--panel)" stroke="var(--line-strong)"/><text x="245" y="19" text-anchor="middle" fill="var(--ink)">a</text>
+              <rect x="266" y="0" width="34" height="28" rx="5" fill="var(--panel)" stroke="var(--line-strong)"/><text x="283" y="19" text-anchor="middle" fill="var(--ink)">c</text>
+              <text x="207" y="-2" font-size="10" fill="var(--err)" text-anchor="middle">i=5 失配</text>
+            </g>
+
+            <text x="8" y="68" font-family="var(--font-mono)" font-size="11.5" fill="var(--muted)" font-weight="700">滑动前</text>
+            <g transform="translate(68,50)" font-family="var(--font-mono)" font-size="14" font-weight="700">
+              <rect x="0" y="0" width="34" height="28" rx="5" fill="var(--purple-soft)" stroke="var(--purple)" stroke-width="2"/><text x="17" y="19" text-anchor="middle" fill="var(--purple)">a</text>
+              <rect x="38" y="0" width="34" height="28" rx="5" fill="var(--purple-soft)" stroke="var(--purple)" stroke-width="2"/><text x="55" y="19" text-anchor="middle" fill="var(--purple)">b</text>
+              <rect x="76" y="0" width="34" height="28" rx="5" fill="var(--purple-soft)" stroke="var(--purple)" stroke-width="2"/><text x="93" y="19" text-anchor="middle" fill="var(--purple)">a</text>
+              <rect x="114" y="0" width="34" height="28" rx="5" fill="var(--ok-soft)" stroke="var(--ok)"/><text x="131" y="19" text-anchor="middle" fill="var(--ok)">b</text>
+              <rect x="152" y="0" width="34" height="28" rx="5" fill="var(--ok-soft)" stroke="var(--ok)"/><text x="169" y="19" text-anchor="middle" fill="var(--ok)">a</text>
+              <rect x="190" y="0" width="34" height="28" rx="5" fill="var(--err-soft)" stroke="var(--err)" stroke-width="2"/><text x="207" y="19" text-anchor="middle" fill="var(--err)">c</text>
+              <rect x="228" y="0" width="34" height="28" rx="5" fill="var(--panel)" stroke="var(--line-strong)"/><text x="245" y="19" text-anchor="middle" fill="var(--ink)">a</text>
+            </g>
+
+            <path d="M 124 84 L 198 110" stroke="var(--purple)" stroke-width="2.2" stroke-dasharray="4 3"/>
+            <text x="360" y="102" font-size="11.5" fill="var(--purple)" font-weight="700">最长相等真前后缀 "aba" (长度 3) 直接对齐！</text>
+
+            <text x="8" y="136" font-family="var(--font-mono)" font-size="11.5" fill="var(--purple)" font-weight="700">滑动后</text>
+            <g transform="translate(144,118)" font-family="var(--font-mono)" font-size="14" font-weight="700">
+              <rect x="0" y="0" width="34" height="28" rx="5" fill="var(--purple-soft)" stroke="var(--purple)" stroke-width="2"/><text x="17" y="19" text-anchor="middle" fill="var(--purple)">a</text>
+              <rect x="38" y="0" width="34" height="28" rx="5" fill="var(--purple-soft)" stroke="var(--purple)" stroke-width="2"/><text x="55" y="19" text-anchor="middle" fill="var(--purple)">b</text>
+              <rect x="76" y="0" width="34" height="28" rx="5" fill="var(--purple-soft)" stroke="var(--purple)" stroke-width="2"/><text x="93" y="19" text-anchor="middle" fill="var(--purple)">a</text>
+              <rect x="114" y="0" width="34" height="28" rx="5" fill="var(--ok-soft)" stroke="var(--ok)" stroke-width="2"/><text x="131" y="19" text-anchor="middle" fill="var(--ok)">b</text>
+              <rect x="152" y="0" width="34" height="28" rx="5" fill="var(--panel)" stroke="var(--line-strong)"/><text x="169" y="19" text-anchor="middle" fill="var(--ink)">a</text>
+              <rect x="190" y="0" width="34" height="28" rx="5" fill="var(--panel)" stroke="var(--line-strong)"/><text x="207" y="19" text-anchor="middle" fill="var(--ink)">c</text>
+              <rect x="228" y="0" width="34" height="28" rx="5" fill="var(--panel)" stroke="var(--line-strong)"/><text x="245" y="19" text-anchor="middle" fill="var(--ink)">a</text>
+              <text x="131" y="42" font-size="10.5" fill="var(--ok)" text-anchor="middle">直接比较 P[3] 与 T[5] ✓</text>
+            </g>
+          </svg>
+          <div class="diagram-cap">在 j = 5 失配时，已匹配串 "ababa" 的最长 Border 是 "aba"（长度 3），因此直接令 j = 3，i = 5 纹丝不动！</div>
+        </div>
+
+        <div class="callout ok">
+          <strong>一句话记住 KMP 跳转规律：</strong>当 <span class="code-inline">T[i] &ne; P[j]</span> 时，我们把 <span class="code-inline">j</span> 改成“已匹配前缀 <span class="code-inline">P[0..j-1]</span> 的最长 Border 长度”，然后继续拿新的 <span class="code-inline">P[j]</span> 去和同一个 <span class="code-inline">T[i]</span> 比较！
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 2：亲眼见证紫色 Border 对齐滑动</div>
+            <div class="try-desc">右侧加载 <span class="code-inline">T="ababababaca"</span>、<span class="code-inline">P="ababaca"</span>，留意第 6 步失配瞬间亮起的<strong>紫色真前后缀</strong>，再看下一步模式串如何丝滑右移！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="runPreset('borderSlide')">▶ 演示 Border 失配滑动</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="1">
+          <div class="quiz-head">随堂小测 2 / 4</div>
+          <div class="quiz-q">字符串 <span class="code-inline">"ababa"</span> 的最长相等<strong>真前后缀</strong>（Border）长度是多少？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" data-ok="0">A. 1（只有 "a"）</button>
+            <button class="quiz-opt" data-ok="0">B. 2（"ab"）</button>
+            <button class="quiz-opt" data-ok="1">C. 3（"aba"）</button>
+            <button class="quiz-opt" data-ok="0">D. 5（整个字符串 "ababa"）</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(0)">← 第 1 课</button>
+        <button class="btn primary" onclick="goLesson(2)">下一课：前缀函数 &pi;[i] 的求法 →</button>
+      </div>
+    </article>
+
+    <!-- LESSON 3 -->
+    <article class="lesson-pane" data-lesson="2">
+      <div class="lesson-eyebrow"><span class="badge purple">第 3 课 / 共 5 课</span><span>核心难点拆解</span></div>
+      <h2 class="lesson-title">前缀函数 <span class="code-inline">&pi;[i]</span>（即 <span class="code-inline">next</span> 数组）与 <span class="math">O</span>(<span class="math">m</span>) 递推</h2>
+      <p class="lesson-lead">既然失配时每次都要查“<span class="code-inline">P[0..j-1]</span> 的最长 Border 长度”，我们只要提前对模式串 <span class="math">P</span> 算好这张表，就能 <span class="math">O</span>(1) 查表跳转！</p>
+
+      <div class="lesson-body">
+        <h3>1. 前缀函数 <span class="code-inline">&pi;[i]</span> 的定义</h3>
+        <div class="formula-box">&pi;[i] = 子串 P[0..i] 的最长相等真前后缀（Border）的长度</div>
+        <p>特别地，单个字符没有真前后缀，所以恒有 <span class="code-inline">&pi;[0] = 0</span>。以 <span class="code-inline">P = "ababaca"</span> 为例：</p>
+        <div class="table-wrap">
+          <table class="cmp-table">
+            <thead>
+              <tr><th>下标 i</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>字符 P[i]</strong></td><td>a</td><td>b</td><td>a</td><td>b</td><td>a</td><td>c</td><td>a</td></tr>
+              <tr><td><strong>前缀 P[0..i]</strong></td><td>a</td><td>ab</td><td>aba</td><td>abab</td><td>ababa</td><td>ababac</td><td>ababaca</td></tr>
+              <tr><td><strong>最长 Border</strong></td><td>—</td><td>—</td><td>a</td><td>ab</td><td>aba</td><td>—</td><td>a</td></tr>
+              <tr><td><strong>&pi;[i]</strong></td><td><strong>0</strong></td><td><strong>0</strong></td><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>0</strong></td><td><strong>1</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout">
+          <strong>关于名字：</strong>教材/OI-Wiki 常用 0-indexed 的前缀函数 <span class="code-inline">&pi;[i]</span>（或 <span class="code-inline">pi[i]</span>）；竞赛中常称它为 <span class="code-inline">next[i]</span>（或 1-indexed 的 <span class="code-inline">nxt[i]</span>），本质完全一样，都是“最长 Border 长度”。
+        </div>
+
+        <h3>2. 通俗拆解最让人头晕的那一行代码</h3>
+        <p>求 <span class="code-inline">&pi;[i]</span> 时，假设我们已经算出了 <span class="code-inline">j = &pi;[i - 1]</span>（即 <span class="code-inline">P[0..i-1]</span> 的最长 Border 长度）。现在新来了一个字符 <span class="code-inline">P[i]</span>：</p>
+        <ul>
+          <li><strong>顺风局</strong>：如果 <span class="code-inline">P[i] == P[j]</span>，太棒了！直接把原来的 Border 延长 1 格，<span class="code-inline">&pi;[i] = j + 1</span>。</li>
+          <li><strong>逆风局</strong>：如果 <span class="code-inline">P[i] &ne; P[j]</span>，我们只好退而求其次，找 <span class="code-inline">P[0..i-1]</span> 的<strong>次长 Border</strong>，看看它的下一个字符能不能和 <span class="code-inline">P[i]</span> 配上。怎么找次长 Border？</li>
+        </ul>
+
+        <div class="formula-box" style="color:var(--purple);">while (j &gt; 0 &amp;&amp; p[i] != p[j]) j = pi[j - 1];</div>
+
+        <div class="callout purple">
+          <strong>核心直觉：次长 Border 就是“最长 Border 的 Border”！</strong><br>
+          因为当前长度为 <span class="code-inline">j</span> 的前缀 <span class="code-inline">A = P[0..j-1]</span> 和末尾长度为 <span class="code-inline">j</span> 的后缀 <span class="code-inline">B</span> <strong>完全相等</strong>。所以任何更短的公共前后缀，既是 <span class="code-inline">A</span> 的前缀，也是 <span class="code-inline">B</span>（也就是 <span class="code-inline">A</span>）的后缀——换句话说，它一定是 <span class="code-inline">P[0..j-1]</span> 自己的 Border！而 <span class="code-inline">P[0..j-1]</span> 的最长 Border 长度，早就存在 <span class="code-inline">&pi;[j - 1]</span> 里了！
+        </div>
+
+        <div class="diagram-box">
+          <svg viewBox="0 0 520 120" width="500" height="115">
+            <rect x="20" y="42" width="480" height="30" rx="6" fill="var(--panel)" stroke="var(--line-strong)" stroke-width="1.5"/>
+            <rect x="20" y="42" width="180" height="30" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.8"/>
+            <rect x="280" y="42" width="180" height="30" rx="6" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.8"/>
+            <rect x="464" y="42" width="36" height="30" rx="6" fill="var(--err-soft)" stroke="var(--err)" stroke-width="2"/>
+            <text x="482" y="61" font-family="var(--font-mono)" font-size="12" font-weight="700" fill="var(--err)" text-anchor="middle">P[i]</text>
+            <text x="110" y="34" font-size="11" fill="var(--accent)" font-weight="700" text-anchor="middle">前缀 A = P[0..j-1]</text>
+            <text x="370" y="34" font-size="11" fill="var(--accent)" font-weight="700" text-anchor="middle">相等后缀 B (长度 j)</text>
+
+            <rect x="20" y="42" width="76" height="30" rx="6" fill="var(--purple-soft)" stroke="var(--purple)" stroke-width="2"/>
+            <rect x="124" y="42" width="76" height="30" rx="6" fill="var(--purple-soft)" stroke="var(--purple)" stroke-width="1.6" stroke-dasharray="4 2"/>
+            <rect x="384" y="42" width="76" height="30" rx="6" fill="var(--purple-soft)" stroke="var(--purple)" stroke-width="2"/>
+            <text x="58" y="61" font-family="var(--font-mono)" font-size="11.5" font-weight="700" fill="var(--purple)" text-anchor="middle">k = π[j-1]</text>
+            <text x="422" y="61" font-family="var(--font-mono)" font-size="11.5" font-weight="700" fill="var(--purple)" text-anchor="middle">k = π[j-1]</text>
+
+            <path d="M 58 76 Q 240 114 422 76" fill="none" stroke="var(--purple)" stroke-width="2" stroke-dasharray="4 3"/>
+            <text x="240" y="109" font-size="11.5" fill="var(--purple)" font-weight="700" text-anchor="middle">A 的最长 Border = 整个串的次长 Border！</text>
+          </svg>
+          <div class="diagram-cap">把 j 跳到 π[j-1]，就会从长到短不重不漏地试遍所有可能的 Border</div>
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 3：把“模式串与自己匹配”放慢看</div>
+            <div class="try-desc">右侧将自动切换到<strong>模式 1（构建前缀函数 &pi;[]）</strong>，上下两排都是模式串 <span class="math">P</span>，让你亲眼看懂 <span class="code-inline">j = pi[j - 1]</span> 是怎么一步步算出每个 <span class="code-inline">&pi;[i]</span> 的！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="runPiPreset('ababaca')">▶ 演示构建 ababaca 的 &pi; 数组</button>
+            <button class="btn sm" onclick="runPiPreset('abababc')">▶ 演示连续回退 abababc</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="2">
+          <div class="quiz-head">随堂小测 3 / 4</div>
+          <div class="quiz-q">在递推前缀函数的 <span class="code-inline">while (j &gt; 0 &amp;&amp; p[i] != p[j]) j = pi[j - 1];</span> 中，为什么要令 <span class="code-inline">j = pi[j - 1]</span>？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" data-ok="0">A. 因为只需要把 j 减 1 即可，写 pi[j-1] 只是习惯</button>
+            <button class="quiz-opt" data-ok="1">B. 因为 P[0..i-1] 的次长 Border 恰好是当前最长 Border P[0..j-1] 的最长 Border，长度就是 pi[j-1]</button>
+            <button class="quiz-opt" data-ok="0">C. 因为每次失配都必须把 j 直接清零</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(1)">← 第 2 课</button>
+        <button class="btn primary" onclick="goLesson(3)">下一课：完整匹配与复杂度证明 →</button>
+      </div>
+    </article>
+
+    <!-- LESSON 4 -->
+    <article class="lesson-pane" data-lesson="3">
+      <div class="lesson-eyebrow"><span class="badge green">第 4 课 / 共 5 课</span><span>完整流程与均摊分析</span></div>
+      <h2 class="lesson-title">完整 KMP 匹配与为什么复杂度是 <span class="math">O</span>(<span class="math">n</span> + <span class="math">m</span>)</h2>
+      <p class="lesson-lead">学会了求 <span class="code-inline">&pi;[]</span>，KMP 的匹配阶段几乎就是复制粘贴同一段代码！但很多初学者看到 <span class="code-inline">for</span> 里面套着 <span class="code-inline">while</span>，会怀疑它是不是 <span class="math">O</span>(<span class="math">n</span>&middot;<span class="math">m</span>)？</p>
+
+      <div class="lesson-body">
+        <h3>1. 完整匹配与“重叠匹配”的小技巧</h3>
+        <p>我们用 <span class="code-inline">j</span> 表示当前已经匹配了 <span class="math">P</span> 的前 <span class="code-inline">j</span> 个字符。从 <span class="code-inline">i = 0</span> 遍历到 <span class="code-inline">n - 1</span>：</p>
+        <ol>
+          <li>如果失配（<span class="code-inline">T[i] &ne; P[j]</span>），就不断执行 <span class="code-inline">j = pi[j - 1]</span>，直到能配上或 <span class="code-inline">j == 0</span>。</li>
+          <li>如果 <span class="code-inline">T[i] == P[j]</span>，就令 <span class="code-inline">j++</span>。</li>
+          <li><strong>命中判定</strong>：如果 <span class="code-inline">j == m</span>，说明在起始下标 <span class="code-inline">i - m + 1</span> 找到了一次完整匹配！记录答案后，<strong>立刻执行 <span class="code-inline">j = pi[j - 1]</span></strong>——假装下一位“失配”了，把模式串滑到最长 Border 对齐处，这样就不会漏掉像 <span class="code-inline">"aba"</span> 在 <span class="code-inline">"ababa"</span> 中出现 2 次这样的<strong>重叠匹配</strong>！</li>
+        </ol>
+
+        <h3>2. 为什么 <span class="code-inline">for</span> 套 <span class="code-inline">while</span> 居然是 <span class="math">O</span>(<span class="math">n</span> + <span class="math">m</span>)？</h3>
+        <p>用<strong>“存钱罐（势能）”直觉</strong>一秒看穿：</p>
+        <ul>
+          <li>把 <span class="code-inline">j</span> 的值想象成存钱罐里的硬币数，初始为 0，且永远不会变成负数（<span class="code-inline">j &ge; 0</span>）。</li>
+          <li>外层 <span class="code-inline">for</span> 循环一共跑 <span class="math">n</span> 轮，每轮里 <span class="code-inline">j++</span> 最多只执行 1 次——也就是<strong>整个过程最多往里存 <span class="math">n</span> 枚硬币</strong>。</li>
+          <li>内层 <span class="code-inline">while</span> 每跳一次 <span class="code-inline">j = pi[j - 1]</span>，因为真前后缀严格短于原串（<span class="code-inline">pi[j - 1] &lt; j</span>），<strong><span class="code-inline">j</span> 至少减少 1</strong>（至少花掉 1 枚硬币）。</li>
+          <li><strong>你花掉的硬币绝不可能超过存进去的硬币！</strong>因此，无论 <span class="code-inline">while</span> 在某一轮突然连跳多少次，它在整个算法运行期间的<strong>总执行次数绝不超过 <span class="math">n</span> 次</strong>！</li>
+        </ul>
+
+        <div class="formula-box">总时间复杂度 = 构造 &pi;[] 的 O(m) + 匹配扫描的 O(n) = O(n + m)</div>
+
+        <div class="table-wrap">
+          <table class="cmp-table">
+            <thead>
+              <tr><th>算法</th><th>预处理时间</th><th>匹配时间</th><th>空间复杂度</th><th>特点</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>暴力匹配</td><td><span class="math">O</span>(1)</td><td>最坏 <span class="math">O</span>(<span class="math">n</span>&middot;<span class="math">m</span>)</td><td><span class="math">O</span>(1)</td><td>简单，但重复字符极易超时</td></tr>
+              <tr><td><strong>KMP 算法</strong></td><td><strong><span class="math">O</span>(<span class="math">m</span>)</strong></td><td><strong>最坏 <span class="math">O</span>(<span class="math">n</span>)</strong></td><td><span class="math">O</span>(<span class="math">m</span>)</td><td>绝对线性、零哈希冲突、还能求循环节</td></tr>
+              <tr><td>字符串哈希</td><td><span class="math">O</span>(<span class="math">n</span> + <span class="math">m</span>)</td><td><span class="math">O</span>(<span class="math">n</span>)</td><td><span class="math">O</span>(<span class="math">n</span>)</td><td>好写，但存在极小概率哈希碰撞</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 4：观察重叠匹配与统计回退总步数</div>
+            <div class="try-desc">演示 <span class="code-inline">T="ababaababa"</span> 中查找 <span class="code-inline">P="aba"</span>，注意每次命中后 <span class="code-inline">j</span> 回退到 <span class="code-inline">&pi;[2]=1</span>，并查看右下角“while 回退次数”是否始终 &le; <span class="math">n</span>！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="runPreset('overlap')">▶ 演示多处重叠匹配</button>
+            <button class="btn sm" onclick="runPreset('multiJump')">▶ 演示连续多次回退</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="3">
+          <div class="quiz-head">随堂小测 4 / 4</div>
+          <div class="quiz-q">KMP 匹配阶段外层是执行 <span class="math">n</span> 次的 <span class="code-inline">for</span> 循环，内层有 <span class="code-inline">while (j &gt; 0 &amp;&amp; t[i] != p[j]) j = pi[j - 1];</span>，为何总时间仍是 <span class="math">O</span>(<span class="math">n</span>)？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" data-ok="0">A. 因为 while 循环在每一轮 for 里最多只会执行 1 次</button>
+            <button class="quiz-opt" data-ok="1">B. 因为 j 始终非负、总共最多增加 n 次，而每次 while 至少让 j 减少 1，故 while 总执行次数不超过 n</button>
+            <button class="quiz-opt" data-ok="0">C. 因为模式串长度 m 通常很小，可以当成常数</button>
+          </div>
+          <div class="quiz-fb"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(2)">← 第 3 课</button>
+        <button class="btn primary" onclick="goLesson(4)">下一课：洛谷模板与循环节实战 →</button>
+      </div>
+    </article>
+
+    <!-- LESSON 5 -->
+    <article class="lesson-pane" data-lesson="4">
+      <div class="lesson-eyebrow"><span class="badge warn">第 5 课 / 共 5 课</span><span>竞赛实战与高频结论</span></div>
+      <h2 class="lesson-title">实战题解：洛谷 P3375 模板与最小循环节</h2>
+      <p class="lesson-lead">掌握这两道必刷题，你就彻底打通了 KMP 在竞赛与面试中的两大核心考法：<strong>线性多处匹配</strong>与<strong>Border 循环节性质</strong>。</p>
+
+      <div class="lesson-body">
+        <div class="prob-tabs" id="probTabs">
+          <button class="prob-tab on" data-prob="0">题 1：洛谷 P3375 【模板】KMP</button>
+          <button class="prob-tab" data-prob="1">题 2：最小循环节（洛谷 P4391）</button>
+        </div>
+
+        <!-- Problem 1 -->
+        <div class="prob-pane on" data-prob="0">
+          <p><span class="badge blue">洛谷 P3375</span> <strong>题目大意</strong>：给出两个字符串 <span class="code-inline">s1</span>（文本串）和 <span class="code-inline">s2</span>（模式串），长度均 &le; 10<sup>6</sup>。第一部分按从小到大输出 <span class="code-inline">s2</span> 在 <span class="code-inline">s1</span> 中每次出现的<strong>1-indexed 起始位置</strong>；最后一行输出 <span class="code-inline">s2</span> 每个前缀的最长 Border 长度（即 <span class="code-inline">&pi;[0..m-1]</span>）。</p>
+
+          <div class="callout ok">
+            <strong>建模要点：</strong>用 0-indexed 写出最干净的 <span class="code-inline">&pi;[]</span> 与匹配循环。当 <span class="code-inline">j == m</span> 时，0-indexed 起点是 <span class="code-inline">i - m + 1</span>，转成题目要求的 1-indexed 只需再加 1，即 <span class="code-inline">i - m + 2</span>。别忘了命中后令 <span class="code-inline">j = pi[j - 1]</span>！
+          </div>
+
+          <div class="try-card">
+            <div class="try-info">
+              <div class="try-title">🧪 一键演练 P3375 官方样例</div>
+              <div class="try-desc">载入 <span class="code-inline">s1="ABABABC"</span>、<span class="code-inline">s2="ABA"</span>，核对输出位置 <span class="code-inline">1, 3</span> 与 Border 数组 <span class="code-inline">0 0 1</span>！</div>
+            </div>
+            <div class="try-btns">
+              <button class="btn primary sm" onclick="runPreset('p3375')">▶ 加载 P3375 样例</button>
+            </div>
+          </div>
+
+          <div class="code-header">
+            <span>C++17 · 洛谷 P3375 可直接 AC 代码</span>
+            <button class="btn sm" onclick="copyCode('codeP3375')">📋 一键复制</button>
+          </div>
+          <pre class="cpp-code" id="codeP3375">#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;vector&gt;
+using namespace std;
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    string s1, s2;
+    cin &gt;&gt; s1 &gt;&gt; s2;
+    int n = (int)s1.size(), m = (int)s2.size();
+
+    // 1. O(m) 计算 s2 的前缀函数 pi[]（即 Border 长度数组）
+    vector&lt;int&gt; pi(m, 0);
+    for (int i = 1, j = 0; i &lt; m; ++i) {
+        while (j &gt; 0 &amp;&amp; s2[i] != s2[j]) j = pi[j - 1];
+        if (s2[i] == s2[j]) ++j;
+        pi[i] = j;
+    }
+
+    // 2. O(n) KMP 匹配，输出所有 1-indexed 起始位置
+    for (int i = 0, j = 0; i &lt; n; ++i) {
+        while (j &gt; 0 &amp;&amp; s1[i] != s2[j]) j = pi[j - 1];
+        if (s1[i] == s2[j]) ++j;
+        if (j == m) {
+            cout &lt;&lt; (i - m + 2) &lt;&lt; '\n'; // 0-indexed 是 i-m+1
+            j = pi[j - 1];               // 继续寻找重叠匹配
+        }
+    }
+
+    // 3. 输出 Border 数组
+    for (int i = 0; i &lt; m; ++i) {
+        cout &lt;&lt; pi[i] &lt;&lt; (i + 1 == m ? '\n' : ' ');
+    }
+    return 0;
+}</pre>
+        </div>
+
+        <!-- Problem 2 -->
+        <div class="prob-pane" data-prob="1">
+          <p><span class="badge purple">高频结论 · 洛谷 P4391 / POJ 2406</span> <strong>题目大意</strong>：给定一个长度为 <span class="math">n</span> 的字符串 <span class="math">S</span>，求它的<strong>最小循环节长度</strong>（即最短的子串长度 <span class="math">L</span>，使得 <span class="math">S</span> 是由长度为 <span class="math">L</span> 的子串不断重复拼接后截取的前缀）。</p>
+
+          <div class="formula-box" style="color:var(--purple);">最小循环节长度 L = n &minus; &pi;[n &minus; 1]</div>
+
+          <p><strong>为什么成立？</strong>令 <span class="math">L</span> = <span class="math">n</span> &minus; <span class="code-inline">&pi;[n - 1]</span>。因为长度 <span class="code-inline">&pi;[n - 1]</span> 的前缀和后缀完全相等，也就是对任意下标 <span class="math">k</span>（0 &le; <span class="math">k</span> &lt; <span class="math">n</span> &minus; <span class="math">L</span>）都有 <span class="code-inline">S[k] == S[k + L]</span>！这意味着整个字符串每隔 <span class="math">L</span> 个字符就完全重复一次，所以 <span class="math">L</span> 一定是循环节；又因为 <span class="code-inline">&pi;[n - 1]</span> 是<strong>最大</strong>的 Border，所以 <span class="math">n</span> &minus; <span class="code-inline">&pi;[n - 1]</span> 就是<strong>最小</strong>循环节！</p>
+
+          <div class="callout warn">
+            <strong>两种常见变体别搞混：</strong><br>
+            1. <strong>允许末尾不完整循环</strong>（如 <span class="code-inline">"abcabcab"</span>，洛谷 P4391）：答案恒为 <span class="code-inline">n - pi[n - 1]</span>（此处 8 &minus; 5 = 3，循环节 <span class="code-inline">"abc"</span>）。<br>
+            2. <strong>要求严格整数次重复</strong>（如 POJ 2406 / LeetCode 459）：需额外判断 <span class="code-inline">n % L == 0</span> 且 <span class="code-inline">pi[n - 1] &gt; 0</span>；若不整除则只能整体算 1 次循环。
+          </div>
+
+          <div class="try-card">
+            <div class="try-info">
+              <div class="try-title">🧪 演示循环节字符串 "abcabcab" 的 &pi; 数组</div>
+              <div class="try-desc">在右侧构建 <span class="code-inline">P="abcabcab"</span> 的 <span class="code-inline">&pi;[]</span>，直观验证 <span class="code-inline">n = 8, &pi;[7] = 5 &rArr; L = 8 - 5 = 3</span>！</div>
+            </div>
+            <div class="try-btns">
+              <button class="btn primary sm" onclick="runPiPreset('period')">▶ 演示 abcabcab 的 &pi; 数组</button>
+            </div>
+          </div>
+
+          <div class="code-header">
+            <span>C++17 · 洛谷 P4391 最小循环节 AC 代码</span>
+            <button class="btn sm" onclick="copyCode('codeP4391')">📋 一键复制</button>
+          </div>
+          <pre class="cpp-code" id="codeP4391">#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;vector&gt;
+using namespace std;
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    string s;
+    cin &gt;&gt; n &gt;&gt; s;
+
+    vector&lt;int&gt; pi(n, 0);
+    for (int i = 1, j = 0; i &lt; n; ++i) {
+        while (j &gt; 0 &amp;&amp; s[i] != s[j]) j = pi[j - 1];
+        if (s[i] == s[j]) ++j;
+        pi[i] = j;
+    }
+
+    int L = n - pi[n - 1];
+    cout &lt;&lt; L &lt;&lt; '\n';
+    // 若题目要求严格整数次重复（如 LeetCode 459）：
+    // bool exact = (pi[n - 1] &gt; 0 &amp;&amp; n % L == 0);
+    return 0;
+}</pre>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(3)">← 第 4 课</button>
+        <a class="btn primary" href="../../index.html" style="text-decoration:none;">🎉 完成课程 · 返回目录</a>
+      </div>
+    </article>
+
+  </section>
+
+  <!-- ==================== RIGHT COLUMN: STICKY INTERACTIVE WORKBENCH ==================== -->
+  <aside class="workbench-sticky">
+    <div class="panel wb-top">
+      <div class="wb-row" style="justify-content:space-between;">
+        <div class="seg-switch" id="modeSwitch">
+          <button data-mode="pi">模式 1：构建前缀函数 &pi;[]</button>
+          <button class="on" data-mode="match">模式 2：KMP 匹配滑动</button>
+        </div>
+        <select id="presetSelect" title="快速选择典型样例">
+          <option value="">✨ 经典样例...</option>
+          <option value="borderSlide">Border 滑动 (ababaca)</option>
+          <option value="killer">暴力杀手 (aaaab)</option>
+          <option value="overlap">多处重叠匹配 (aba)</option>
+          <option value="p3375">洛谷 P3375 样例</option>
+          <option value="multiJump">连续多次回退 (abababc)</option>
+          <option value="period">最小循环节 (abcabcab)</option>
+        </select>
+      </div>
+
+      <div class="wb-row">
+        <label class="field-group text-field" id="textFieldGroup">
+          <span>文本 T</span>
+          <input type="text" id="inputT" value="ababababaca" maxlength="28" spellcheck="false" placeholder="如 ababababaca">
+        </label>
+        <label class="field-group">
+          <span>模式 P</span>
+          <input type="text" id="inputP" value="ababaca" maxlength="18" spellcheck="false" placeholder="如 ababaca">
+        </label>
+        <button class="btn primary" id="runBtn">▶ 生成步骤</button>
+        <button class="btn" id="randBtn">🎲 随机</button>
+      </div>
+
+      <!-- Visual Alignment Stage -->
+      <div class="stage-box" id="stageBox">
+        <div class="stage-inner" id="stageInner">
+          <div class="ptr-track" id="ptrITrack">
+            <div class="ptr-pill ptr-i" id="ptrIPill">i=0</div>
+          </div>
+
+          <div style="position:relative;">
+            <span class="row-label" id="topRowLabel" style="top:17px;">T</span>
+            <div class="char-row" id="topCharRow"></div>
+          </div>
+
+          <div class="pat-slider" id="patSlider">
+            <span class="row-label" id="botRowLabel" style="top:12px;">P</span>
+            <div class="char-row" id="botCharRow"></div>
+            <div class="ptr-track" id="ptrJTrack" style="margin-top:4px;margin-bottom:0;">
+              <div class="ptr-pill ptr-j" id="ptrJPill">j=0</div>
+            </div>
+          </div>
+
+          <div class="border-banner" id="borderBanner"></div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><i style="background:var(--ok-soft);border-color:var(--ok);"></i>已匹配 / 命中</span>
+        <span><i style="background:var(--err-soft);border-color:var(--err);"></i>失配</span>
+        <span><i style="background:var(--purple-soft);border-color:var(--purple);"></i>相等真前后缀 (Border)</span>
+        <span><i style="background:var(--accent-soft);border-color:var(--accent);"></i>当前指针</span>
+      </div>
+
+      <!-- Narration -->
+      <div class="narration-box" id="narrationBox">
+        <div class="narration-text" id="narrationText">点击“▶ 播放”或左侧微实验按钮，开始观察 KMP 滑动与 Border 跳转。</div>
+        <span class="narration-tag" id="narrationTag">就绪</span>
+      </div>
+
+      <!-- Playback Controls -->
+      <div class="playback-bar">
+        <button class="btn sm" id="prevBtn" title="上一步 (←)">⏮</button>
+        <button class="btn primary sm" id="playBtn" title="播放/暂停 (Space)">▶ 播放</button>
+        <button class="btn sm" id="nextBtn" title="下一步 (→)">⏭</button>
+        <input type="range" id="stepSlider" min="0" max="0" value="0">
+        <span class="step-counter" id="stepCounter">0 / 0</span>
+        <select id="speedSelect" title="播放速度">
+          <option value="1300">0.6x</option>
+          <option value="850" selected>1.0x</option>
+          <option value="500">1.5x</option>
+          <option value="260">2.5x</option>
+        </select>
+      </div>
+
+      <!-- Pi Array Table -->
+      <div class="pi-table-wrap">
+        <div class="pi-table-title">
+          <span>前缀函数 &pi;[]（Border 长度表）</span>
+          <span id="piHint" style="font-weight:500;font-family:var(--font-mono);">P = "ababaca"</span>
+        </div>
+        <table class="pi-tbl" id="piTable"></table>
+      </div>
+
+      <!-- Stats + Matches + Pseudocode -->
+      <div class="wb-bottom-grid">
+        <div>
+          <div class="mini-stats">
+            <div class="stat-box"><div class="v" id="statCmp">0</div><div class="l">字符比较</div></div>
+            <div class="stat-box"><div class="v" id="statJump">0</div><div class="l">while 回退</div></div>
+            <div class="stat-box"><div class="v" id="statExtra">0</div><div class="l" id="statExtraLabel">已命中数</div></div>
+          </div>
+          <div class="match-strip" id="matchStrip">
+            <span style="color:var(--muted);">已命中起点：暂无</span>
+          </div>
+        </div>
+
+        <div class="code-box" id="codeBox"></div>
+      </div>
+    </div>
+  </aside>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  /* ==================== Theme & Navigation ==================== */
+  const root = document.documentElement;
+  const savedTheme = localStorage.getItem('algo_theme');
+  if (savedTheme) root.setAttribute('data-theme', savedTheme);
+
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    const isDark = root.getAttribute('data-theme') === 'dark' ||
+      (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = isDark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('algo_theme', next);
+  });
+
+  const visited = new Set([0]);
+  const pills = Array.from(document.querySelectorAll('.lesson-pill'));
+  const panes = Array.from(document.querySelectorAll('.lesson-pane'));
+  const progressPill = document.getElementById('progressPill');
+
+  window.goLesson = function(idx) {
+    visited.add(idx);
+    pills.forEach((p, i) => {
+      p.classList.toggle('active', i === idx);
+      p.classList.toggle('done', visited.has(i) && i !== idx);
+    });
+    panes.forEach((p, i) => p.classList.toggle('active', i === idx));
+    progressPill.textContent = `进度 ${visited.size}/${pills.length}`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  pills.forEach(p => p.addEventListener('click', () => goLesson(Number(p.dataset.lesson))));
+
+  /* Problem tabs in Lesson 5 */
+  document.querySelectorAll('.prob-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const id = tab.dataset.prob;
+      document.querySelectorAll('.prob-tab').forEach(t => t.classList.toggle('on', t.dataset.prob === id));
+      document.querySelectorAll('.prob-pane').forEach(p => p.classList.toggle('on', p.dataset.prob === id));
+    });
+  });
+
+  /* Copy Code */
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.classList.remove('show'), 1800);
+  }
+  window.copyCode = function(id) {
+    const txt = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(txt).then(() => showToast('✓ 已复制 C++ 代码到剪贴板'));
+  };
+
+  /* ==================== Quizzes ==================== */
+  const quizExplanations = [
+    '正确！在类似 T="aaaa...ab"、P="aaa...ab" 的样例中，每个起始点都会匹配 m-1 次后失配，暴力法将 i 回退并丢弃已匹配信息，导致 O(n·m)。',
+    '正确！"ababa" 的真前缀有 a, ab, aba, abab，真后缀有 a, ba, aba, baba，最长的公共真前后缀（Border）是 "aba"，长度为 3。注意不能取整个串本身！',
+    '正确！因为当前长度为 j 的前缀与后缀完全相等，任何更短的 Border 必然也是 P[0..j-1] 自身的 Border，其最长长度恰好就是 pi[j-1]。',
+    '正确！势能/存钱罐直觉：外层 for 最多执行 n 次 j++，而内层 while 每次令 j = pi[j-1] < j 至少使 j 减少 1，且 j ≥ 0，所以 while 总计最多执行 n 次。'
+  ];
+
+  document.querySelectorAll('.quiz-box').forEach(box => {
+    const qIdx = Number(box.dataset.quiz);
+    const fb = box.querySelector('.quiz-fb');
+    const opts = box.querySelectorAll('.quiz-opt');
+    opts.forEach(btn => {
+      btn.addEventListener('click', () => {
+        opts.forEach(b => b.classList.remove('correct', 'wrong'));
+        const ok = btn.dataset.ok === '1';
+        btn.classList.add(ok ? 'correct' : 'wrong');
+        fb.className = 'quiz-fb show ' + (ok ? 'ok' : 'err');
+        fb.textContent = ok
+          ? '✓ ' + quizExplanations[qIdx]
+          : '✗ 再想想看：提示——结合本课的动画与高亮结论再核对一下！';
+      });
+    });
+  });
+
+  /* ==================== Pseudocode Definitions ==================== */
+  const PI_CODE = [
+    '<span class="kw">vector</span>&lt;<span class="kw">int</span>&gt; pi(m, <span class="num">0</span>); <span class="cm">// pi[0] = 0</span>',
+    '<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>, j = <span class="num">0</span>; i &lt; m; i++) {',
+    '  <span class="kw">while</span> (j &gt; <span class="num">0</span> &amp;&amp; p[i] != p[j])',
+    '    j = pi[j - <span class="num">1</span>]; <span class="cm">// 次长 Border</span>',
+    '  <span class="kw">if</span> (p[i] == p[j]) j++;',
+    '  pi[i] = j;',
+    '}'
+  ];
+
+  const MATCH_CODE = [
+    '<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>, j = <span class="num">0</span>; i &lt; n; i++) {',
+    '  <span class="kw">while</span> (j &gt; <span class="num">0</span> &amp;&amp; t[i] != p[j])',
+    '    j = pi[j - <span class="num">1</span>]; <span class="cm">// i 不回退!</span>',
+    '  <span class="kw">if</span> (t[i] == p[j]) j++;',
+    '  <span class="kw">if</span> (j == m) {',
+    '    ans.<span class="fn">push_back</span>(i - m + <span class="num">1</span>);',
+    '    j = pi[j - <span class="num">1</span>]; <span class="cm">// 找重叠匹配</span>',
+    '  }',
+    '}'
+  ];
+
+  /* ==================== KMP Trace Generators ==================== */
+  function computePi(p) {
+    const m = p.length;
+    const pi = new Array(m).fill(0);
+    for (let i = 1, j = 0; i < m; i++) {
+      while (j > 0 && p[i] !== p[j]) j = pi[j - 1];
+      if (p[i] === p[j]) j++;
+      pi[i] = j;
+    }
+    return pi;
+  }
+
+  function buildPiTrace(p) {
+    const m = p.length;
+    const pi = new Array(m).fill(null);
+    pi[0] = 0;
+    const steps = [];
+    let cmp = 0, jumps = 0;
+
+    steps.push({
+      mode: 'pi', top: p, bot: p,
+      i: 0, j: 0, shift: 0,
+      pi: pi.slice(), piRead: -1, piWrite: 0,
+      matchedLen: 0, status: 'init',
+      borderLen: 0,
+      cmp, jumps, matches: [],
+      codeLine: 0, tag: '初始化', tone: '',
+      text: `初始化 π[0] = 0（单个字符 "${p[0]}" 没有真前后缀）。接下来从 i = 1 开始让模式串 P 与自己做匹配。`
+    });
+
+    let j = 0;
+    for (let i = 1; i < m; i++) {
+      while (j > 0 && p[i] !== p[j]) {
+        cmp++;
+        jumps++;
+        const nextJ = pi[j - 1];
+        steps.push({
+          mode: 'pi', top: p, bot: p,
+          i, j, shift: i - j,
+          pi: pi.slice(), piRead: j - 1, piWrite: -1,
+          matchedLen: j, status: 'mismatch-jump',
+          borderLen: nextJ, jumpFrom: j, jumpTo: nextJ,
+          cmp, jumps, matches: [],
+          codeLine: 3, tag: 'Border 回退', tone: 'is-rot',
+          text: `失配！P[${i}]='${p[i]}' ≠ P[${j}]='${p[j]}'。查表 π[${j - 1}] = ${nextJ}，令 j 从 ${j} 回退到 ${nextJ}（${nextJ > 0 ? `保留长度为 ${nextJ} 的相等真前后缀 "${p.slice(0, nextJ)}"` : '无更短 Border，归零'}）。`
+        });
+        j = nextJ;
+      }
+
+      cmp++;
+      if (p[i] === p[j]) {
+        const prevJ = j;
+        j++;
+        pi[i] = j;
+        steps.push({
+          mode: 'pi', top: p, bot: p,
+          i, j: prevJ, shift: i - prevJ,
+          pi: pi.slice(), piRead: -1, piWrite: i,
+          matchedLen: j, status: 'match',
+          borderLen: 0,
+          cmp, jumps, matches: [],
+          codeLine: 4, tag: `π[${i}] = ${j}`, tone: 'is-ok',
+          text: `匹配！P[${i}] == P[${prevJ}] == '${p[i]}'，Border 延长 1 格，写入 π[${i}] = ${j}（子串 "${p.slice(0, i + 1)}" 最长真前后缀为 "${p.slice(0, j)}"）。`
+        });
+      } else {
+        pi[i] = 0;
+        steps.push({
+          mode: 'pi', top: p, bot: p,
+          i, j: 0, shift: i,
+          pi: pi.slice(), piRead: -1, piWrite: i,
+          matchedLen: 0, status: 'mismatch-zero',
+          borderLen: 0,
+          cmp, jumps, matches: [],
+          codeLine: 5, tag: `π[${i}] = 0`, tone: 'is-warn',
+          text: `P[${i}]='${p[i]}' ≠ P[0]='${p[0]}' 且 j 已为 0，无法再回退，写入 π[${i}] = 0。`
+        });
+      }
+    }
+
+    const period = m - pi[m - 1];
+    steps.push({
+      mode: 'pi', top: p, bot: p,
+      i: m - 1, j: pi[m - 1], shift: m - pi[m - 1],
+      pi: pi.slice(), piRead: -1, piWrite: -1,
+      matchedLen: 0, status: 'done',
+      borderLen: pi[m - 1], period,
+      cmp, jumps, matches: [],
+      codeLine: 6, tag: '构建完成', tone: 'is-ok',
+      text: `π[] 构建完成：[${pi.join(', ')}]！共比较 ${cmp} 次、while 回退 ${jumps} 次（≤ m=${m}）。最小循环节 L = m - π[m-1] = ${m} - ${pi[m - 1]} = ${period}（"${p.slice(0, period)}"）。`
+    });
+    return steps;
+  }
+
+  function buildMatchTrace(t, p) {
+    const n = t.length, m = p.length;
+    const pi = computePi(p);
+    const steps = [];
+    const matches = [];
+    let cmp = 0, jumps = 0;
+
+    steps.push({
+      mode: 'match', top: t, bot: p,
+      i: 0, j: 0, shift: 0,
+      pi: pi.slice(), piRead: -1, piWrite: -1,
+      matchedLen: 0, status: 'init',
+      borderLen: 0,
+      cmp, jumps, matches: [],
+      codeLine: 0, tag: '准备匹配', tone: '',
+      text: `已预处理好模式串 "${p}" 的前缀函数 π = [${pi.join(', ')}]。开始从 i = 0 扫描文本串，指针 i 永不回退！`
+    });
+
+    let j = 0;
+    for (let i = 0; i < n; i++) {
+      while (j > 0 && t[i] !== p[j]) {
+        cmp++;
+        jumps++;
+        const nextJ = pi[j - 1];
+        steps.push({
+          mode: 'match', top: t, bot: p,
+          i, j, shift: i - j,
+          pi: pi.slice(), piRead: j - 1, piWrite: -1,
+          matchedLen: j, status: 'mismatch-jump',
+          borderLen: nextJ, jumpFrom: j, jumpTo: nextJ,
+          cmp, jumps, matches: matches.slice(),
+          codeLine: 2, tag: '失配跳转', tone: 'is-rot',
+          text: `失配！T[${i}]='${t[i]}' ≠ P[${j}]='${p[j]}'。i=${i} 不回退，查 π[${j - 1}]=${nextJ}，模式串右滑 ${j - nextJ} 格${nextJ > 0 ? `对齐紫色真前后缀 "${p.slice(0, nextJ)}"` : '重新对齐起点'}！`
+        });
+        j = nextJ;
+      }
+
+      cmp++;
+      if (t[i] === p[j]) {
+        if (j + 1 === m) {
+          const startPos = i - m + 1;
+          matches.push(startPos);
+          const nextJ = pi[m - 1];
+          steps.push({
+            mode: 'match', top: t, bot: p,
+            i, j, shift: startPos,
+            pi: pi.slice(), piRead: m - 1, piWrite: -1,
+            matchedLen: m, status: 'full-match',
+            borderLen: nextJ, hitPos: startPos,
+            cmp, jumps, matches: matches.slice(),
+            codeLine: 5, tag: `命中 @${startPos}`, tone: 'is-ok',
+            text: `🎉 完全匹配！在下标 ${startPos}（1-indexed 第 ${startPos + 1} 位）命中 "${p}"！随后置 j = π[${m - 1}] = ${nextJ} 继续寻找可能的重叠匹配。`
+          });
+          j = nextJ;
+        } else {
+          const prevJ = j;
+          j++;
+          steps.push({
+            mode: 'match', top: t, bot: p,
+            i, j: prevJ, shift: i - prevJ,
+            pi: pi.slice(), piRead: -1, piWrite: -1,
+            matchedLen: j, status: 'match',
+            borderLen: 0,
+            cmp, jumps, matches: matches.slice(),
+            codeLine: 3, tag: `匹配 (${j}/${m})`, tone: 'is-ok',
+            text: `匹配！T[${i}] == P[${prevJ}] == '${t[i]}'，已匹配前缀长度 j → ${j}，i 前进到 ${i + 1}。`
+          });
+        }
+      } else {
+        steps.push({
+          mode: 'match', top: t, bot: p,
+          i, j: 0, shift: i,
+          pi: pi.slice(), piRead: -1, piWrite: -1,
+          matchedLen: 0, status: 'mismatch-zero',
+          borderLen: 0,
+          cmp, jumps, matches: matches.slice(),
+          codeLine: 3, tag: '右移 1 格', tone: 'is-warn',
+          text: `失配！T[${i}]='${t[i]}' ≠ P[0]='${p[0]}'，j 已为 0 无法再回退，模式串直接右移 1 格，i 前进到 ${i + 1}。`
+        });
+      }
+    }
+
+    steps.push({
+      mode: 'match', top: t, bot: p,
+      i: Math.max(0, n - 1), j, shift: Math.max(0, n - j),
+      pi: pi.slice(), piRead: -1, piWrite: -1,
+      matchedLen: 0, status: 'done',
+      borderLen: 0,
+      cmp, jumps, matches: matches.slice(),
+      codeLine: 8, tag: '扫描完成', tone: 'is-ok',
+      text: `扫描结束！共找到 ${matches.length} 处匹配${matches.length ? `（0-indexed: ${matches.join(', ')}）` : ''}。总比较 ${cmp} 次，while 回退仅 ${jumps} 次（≤ 文本长度 n=${n}），完美印证 O(n+m)！`
+    });
+    return steps;
+  }
+
+  /* ==================== Workbench State & Rendering ==================== */
+  const CELL_STEP = 42; // 38px cell + 4px gap
+
+  let currentMode = 'match';
+  let trace = [];
+  let stepIdx = 0;
+  let timer = null;
+
+  const modeSwitch = document.getElementById('modeSwitch');
+  const textFieldGroup = document.getElementById('textFieldGroup');
+  const inputT = document.getElementById('inputT');
+  const inputP = document.getElementById('inputP');
+  const presetSelect = document.getElementById('presetSelect');
+  const topRowLabel = document.getElementById('topRowLabel');
+  const botRowLabel = document.getElementById('botRowLabel');
+  const topCharRow = document.getElementById('topCharRow');
+  const botCharRow = document.getElementById('botCharRow');
+  const patSlider = document.getElementById('patSlider');
+  const ptrIPill = document.getElementById('ptrIPill');
+  const ptrJPill = document.getElementById('ptrJPill');
+  const borderBanner = document.getElementById('borderBanner');
+  const narrationBox = document.getElementById('narrationBox');
+  const narrationText = document.getElementById('narrationText');
+  const narrationTag = document.getElementById('narrationTag');
+  const stepSlider = document.getElementById('stepSlider');
+  const stepCounter = document.getElementById('stepCounter');
+  const playBtn = document.getElementById('playBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const speedSelect = document.getElementById('speedSelect');
+  const piTable = document.getElementById('piTable');
+  const piHint = document.getElementById('piHint');
+  const statCmp = document.getElementById('statCmp');
+  const statJump = document.getElementById('statJump');
+  const statExtra = document.getElementById('statExtra');
+  const statExtraLabel = document.getElementById('statExtraLabel');
+  const matchStrip = document.getElementById('matchStrip');
+  const codeBox = document.getElementById('codeBox');
+
+  function stopPlay() {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+    playBtn.textContent = '▶ 播放';
+  }
+
+  function startPlay() {
+    if (!trace.length) return;
+    if (stepIdx >= trace.length - 1) stepIdx = 0;
+    renderStep(stepIdx);
+    stopPlay();
+    playBtn.textContent = '⏸ 暂停';
+    const ms = Number(speedSelect.value);
+    timer = setInterval(() => {
+      if (stepIdx < trace.length - 1) {
+        stepIdx++;
+        renderStep(stepIdx);
+      } else {
+        stopPlay();
+      }
+    }, ms);
+  }
+
+  function renderCode(mode, activeLine) {
+    const lines = mode === 'pi' ? PI_CODE : MATCH_CODE;
+    codeBox.innerHTML = lines.map((html, idx) =>
+      `<div class="c-line${idx === activeLine ? ' active' : ''}"><span class="ln">${idx + 1}</span><span>${html}</span></div>`
+    ).join('');
+  }
+
+  function buildStageDOM(topStr, botStr, mode) {
+    topRowLabel.textContent = mode === 'pi' ? 'P[i]' : 'T';
+    botRowLabel.textContent = mode === 'pi' ? 'P[j]' : 'P';
+
+    topCharRow.innerHTML = topStr.split('').map((ch, idx) =>
+      `<div class="cell-col"><span class="cell-idx">${idx}</span><div class="cell-box" data-top="${idx}">${ch}</div></div>`
+    ).join('');
+
+    botCharRow.innerHTML = botStr.split('').map((ch, idx) =>
+      `<div class="cell-col"><div class="cell-box" data-bot="${idx}">${ch}</div><span class="cell-idx">${idx}</span></div>`
+    ).join('');
+  }
+
+  function renderPiTable(p, piArr, readIdx, writeIdx) {
+    piHint.textContent = `P = "${p}" (m=${p.length})`;
+    let r1 = '<tr><th>下标</th>', r2 = '<tr><th>字符</th>', r3 = '<tr><th>&pi;[k]</th>';
+    for (let k = 0; k < p.length; k++) {
+      r1 += `<th>${k}</th>`;
+      r2 += `<td>${p[k]}</td>`;
+      const val = piArr[k] === null ? '—' : piArr[k];
+      let cls = 'pi-val';
+      if (k === readIdx) cls += ' hi-read';
+      else if (k === writeIdx) cls += ' hi-write';
+      r3 += `<td class="${cls}">${val}</td>`;
+    }
+    piTable.innerHTML = r1 + '</tr>' + r2 + '</tr>' + r3 + '</tr>';
+  }
+
+  function renderStep(idx) {
+    if (!trace.length) return;
+    stepIdx = Math.max(0, Math.min(idx, trace.length - 1));
+    const st = trace[stepIdx];
+
+    // Smoothly slide pattern row & pointers
+    patSlider.style.transform = `translateX(${st.shift * CELL_STEP}px)`;
+    ptrIPill.style.transform = `translateX(${st.i * CELL_STEP}px)`;
+    ptrIPill.textContent = `i=${st.i}`;
+
+    const displayJ = st.status === 'done' && st.mode === 'pi' ? st.borderLen : st.j;
+    ptrJPill.style.transform = `translateX(${Math.min(displayJ, st.bot.length - 1) * CELL_STEP}px)`;
+    ptrJPill.textContent = `j=${displayJ}`;
+    ptrJPill.style.opacity = st.status === 'done' ? '0.45' : '1';
+    ptrIPill.style.opacity = st.status === 'done' ? '0.45' : '1';
+
+    // Reset all cell styles
+    const topCells = topCharRow.querySelectorAll('.cell-box');
+    const botCells = botCharRow.querySelectorAll('.cell-box');
+    topCells.forEach(c => c.className = 'cell-box');
+    botCells.forEach(c => c.className = 'cell-box');
+
+    if (st.status === 'init') {
+      if (topCells[0]) topCells[0].classList.add('st-active');
+      if (botCells[0]) botCells[0].classList.add('st-active');
+    } else if (st.status === 'match') {
+      for (let k = 0; k < st.matchedLen - 1; k++) {
+        if (topCells[st.shift + k]) topCells[st.shift + k].classList.add('st-matched');
+        if (botCells[k]) botCells[k].classList.add('st-matched');
+      }
+      if (topCells[st.i]) topCells[st.i].classList.add('st-match-now');
+      if (botCells[st.j]) botCells[st.j].classList.add('st-match-now');
+    } else if (st.status === 'full-match') {
+      for (let k = 0; k < st.bot.length; k++) {
+        if (topCells[st.shift + k]) topCells[st.shift + k].classList.add('st-hit');
+        if (botCells[k]) botCells[k].classList.add('st-hit');
+      }
+    } else if (st.status === 'mismatch-jump') {
+      for (let k = 0; k < st.j; k++) {
+        if (topCells[st.shift + k]) topCells[st.shift + k].classList.add('st-matched');
+        if (botCells[k]) botCells[k].classList.add('st-matched');
+      }
+      // Highlight purple Border (proper prefix of P and proper suffix of matched region in T)
+      for (let k = 0; k < st.borderLen; k++) {
+        const sufIdx = st.i - st.borderLen + k;
+        if (topCells[sufIdx]) {
+          topCells[sufIdx].classList.remove('st-matched');
+          topCells[sufIdx].classList.add('st-border');
+        }
+        if (botCells[k]) {
+          botCells[k].classList.remove('st-matched');
+          botCells[k].classList.add('st-border');
+        }
+      }
+      if (topCells[st.i]) topCells[st.i].classList.add('st-mismatch');
+      if (botCells[st.j]) botCells[st.j].classList.add('st-mismatch');
+    } else if (st.status === 'mismatch-zero') {
+      if (topCells[st.i]) topCells[st.i].classList.add('st-mismatch');
+      if (botCells[0]) botCells[0].classList.add('st-mismatch');
+    } else if (st.status === 'done' && st.mode === 'pi' && st.borderLen > 0) {
+      for (let k = 0; k < st.borderLen; k++) {
+        if (topCells[st.top.length - st.borderLen + k]) topCells[st.top.length - st.borderLen + k].classList.add('st-border');
+        if (botCells[k]) botCells[k].classList.add('st-border');
+      }
+    }
+
+    // Border info banner
+    if (st.status === 'mismatch-jump') {
+      const bStr = st.borderLen > 0 ? `"${st.bot.slice(0, st.borderLen)}"` : '空串';
+      borderBanner.innerHTML = `<span class="border-chip">⚡ 相等真前后缀 Border = ${bStr}（长度 π[${st.jumpFrom - 1}] = ${st.borderLen}）→ 右滑 ${st.jumpFrom - st.borderLen} 格</span>`;
+    } else if (st.status === 'full-match') {
+      borderBanner.innerHTML = `<span class="border-chip ok">🎉 完整命中起始下标 ${st.hitPos}（1-indexed: ${st.hitPos + 1}）</span><span class="border-chip">下步 j → π[${st.bot.length - 1}] = ${st.borderLen}</span>`;
+    } else if (st.status === 'done' && st.mode === 'pi') {
+      borderBanner.innerHTML = `<span class="border-chip ok">✓ 最小循环节 L = ${st.top.length} - ${st.borderLen} = ${st.period}（"${st.top.slice(0, st.period)}"）</span>`;
+    } else {
+      borderBanner.innerHTML = '';
+    }
+
+    // Narration
+    narrationBox.className = 'narration-box' + (st.tone ? ' ' + st.tone : '');
+    narrationText.textContent = st.text;
+    narrationTag.textContent = st.tag;
+
+    // Playback UI
+    stepSlider.max = Math.max(0, trace.length - 1);
+    stepSlider.value = stepIdx;
+    stepCounter.textContent = `${stepIdx + 1} / ${trace.length}`;
+    prevBtn.disabled = stepIdx <= 0;
+    nextBtn.disabled = stepIdx >= trace.length - 1;
+
+    // Pi table & stats
+    renderPiTable(st.bot, st.pi, st.piRead, st.piWrite);
+    statCmp.textContent = st.cmp;
+    statJump.textContent = st.jumps;
+    if (st.mode === 'match') {
+      statExtraLabel.textContent = '已命中数';
+      statExtra.textContent = st.matches.length;
+      if (st.matches.length) {
+        matchStrip.innerHTML = '<span style="color:var(--muted);">已命中起点：</span>' +
+          st.matches.map(pos => `<span class="match-pill">idx=${pos} (第${pos + 1}位)</span>`).join('');
+      } else {
+        matchStrip.innerHTML = '<span style="color:var(--muted);">已命中起点：暂无</span>';
+      }
+    } else {
+      statExtraLabel.textContent = '最大 π 值';
+      const maxPi = st.pi.reduce((acc, v) => (v !== null && v > acc ? v : acc), 0);
+      statExtra.textContent = maxPi;
+      const done = st.status === 'done';
+      matchStrip.innerHTML = done
+        ? `<span style="color:var(--muted);">最小循环节：</span><span class="match-pill">L = ${st.period} ("${st.top.slice(0, st.period)}")</span>`
+        : `<span style="color:var(--muted);">自匹配进度：已计算 ${st.pi.filter(v => v !== null).length} / ${st.bot.length} 位</span>`;
+    }
+
+    // Pseudocode highlight
+    renderCode(st.mode, st.codeLine);
+  }
+
+  function rebuildAndRender(autoPlay = false) {
+    stopPlay();
+    let t = inputT.value.replace(/\s+/g, '');
+    let p = inputP.value.replace(/\s+/g, '');
+    if (!p) { p = 'ababaca'; inputP.value = p; }
+    if (!t) { t = 'ababababaca'; inputT.value = t; }
+    if (p.length > 18) { p = p.slice(0, 18); inputP.value = p; }
+    if (t.length > 28) { t = t.slice(0, 28); inputT.value = t; }
+
+    if (currentMode === 'pi') {
+      buildStageDOM(p, p, 'pi');
+      trace = buildPiTrace(p);
+    } else {
+      buildStageDOM(t, p, 'match');
+      trace = buildMatchTrace(t, p);
+    }
+    stepIdx = 0;
+    renderStep(0);
+    if (autoPlay) startPlay();
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+    modeSwitch.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+    textFieldGroup.classList.toggle('hidden', mode === 'pi');
+  }
+
+  modeSwitch.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setMode(btn.dataset.mode);
+      rebuildAndRender(false);
+    });
+  });
+
+  document.getElementById('runBtn').addEventListener('click', () => rebuildAndRender(true));
+
+  document.getElementById('randBtn').addEventListener('click', () => {
+    const alphabet = ['a', 'b', 'a', 'b', 'c'];
+    const pLen = 4 + Math.floor(Math.random() * 4);
+    let p = '';
+    for (let k = 0; k < pLen; k++) p += alphabet[Math.floor(Math.random() * alphabet.length)];
+    const tLen = 12 + Math.floor(Math.random() * 6);
+    let t = '';
+    for (let k = 0; k < tLen; k++) t += alphabet[Math.floor(Math.random() * alphabet.length)];
+    // Embed p once to make random demo interesting
+    const pos = Math.floor(Math.random() * Math.max(1, tLen - pLen));
+    t = t.slice(0, pos) + p + t.slice(pos + pLen);
+    inputT.value = t;
+    inputP.value = p;
+    rebuildAndRender(true);
+  });
+
+  /* Presets (shared by dropdown & left lesson try-cards) */
+  const PRESETS = {
+    borderSlide: { mode: 'match', t: 'ababababaca', p: 'ababaca' },
+    classic:     { mode: 'match', t: 'ababcabcabababd', p: 'ababd' },
+    killer:      { mode: 'match', t: 'aaaaaaaaaab', p: 'aaaab' },
+    overlap:     { mode: 'match', t: 'ababaababa', p: 'aba' },
+    multiJump:   { mode: 'match', t: 'ababababcabababc', p: 'abababc' },
+    p3375:       { mode: 'match', t: 'ABABABC', p: 'ABA' },
+    ababaca:     { mode: 'pi',    t: 'ababababaca', p: 'ababaca' },
+    abababc:     { mode: 'pi',    t: 'ababababc', p: 'abababc' },
+    period:      { mode: 'pi',    t: 'abcabcab', p: 'abcabcab' }
+  };
+
+  window.runPreset = function(key) {
+    const cfg = PRESETS[key];
+    if (!cfg) return;
+    setMode(cfg.mode);
+    inputT.value = cfg.t;
+    inputP.value = cfg.p;
+    rebuildAndRender(true);
+  };
+
+  window.runPiPreset = function(key) {
+    const cfg = PRESETS[key];
+    if (!cfg) return;
+    setMode('pi');
+    inputP.value = cfg.p;
+    rebuildAndRender(true);
+  };
+
+  presetSelect.addEventListener('change', () => {
+    if (presetSelect.value) {
+      runPreset(presetSelect.value);
+      presetSelect.value = '';
+    }
+  });
+
+  /* Playback Controls */
+  playBtn.addEventListener('click', () => (timer ? stopPlay() : startPlay()));
+  prevBtn.addEventListener('click', () => { stopPlay(); renderStep(stepIdx - 1); });
+  nextBtn.addEventListener('click', () => { stopPlay(); renderStep(stepIdx + 1); });
+  stepSlider.addEventListener('input', () => { stopPlay(); renderStep(Number(stepSlider.value)); });
+  speedSelect.addEventListener('change', () => { if (timer) startPlay(); });
+
+  document.addEventListener('keydown', e => {
+    const tag = (e.target && e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      timer ? stopPlay() : startPlay();
+    } else if (e.code === 'ArrowLeft') {
+      e.preventDefault();
+      stopPlay();
+      renderStep(stepIdx - 1);
+    } else if (e.code === 'ArrowRight') {
+      e.preventDefault();
+      stopPlay();
+      renderStep(stepIdx + 1);
+    }
+  });
+
+  /* Initial Render */
+  setMode('match');
+  rebuildAndRender(false);
+})();
+</script>
+</body>
+</html>
