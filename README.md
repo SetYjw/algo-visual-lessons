@@ -9,6 +9,7 @@
 | 课程 | 分类 | 路径 |
 | :--- | :--- | :--- |
 | 从零掌握搜索树与平衡树（BST / AVL） | 数据结构 | [`lessons/bst-avl/index.html`](./lessons/bst-avl/index.html) |
+| 从零掌握 Tarjan 强连通分量与缩点 | 图论 | [`lessons/tarjan-scc/index.html`](./lessons/tarjan-scc/index.html) |
 
 ## 目录结构
 

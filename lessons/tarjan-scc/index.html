@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>从零掌握 Tarjan 强连通分量与缩点 — 交互式微课 · 实时动画 · 应用与实战</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root {
+  --bg: #EEF1F6;
+  --panel: #FFFFFF;
+  --sunk: #F5F7FA;
+  --ink: #18202E;
+  --muted: #5C6779;
+  --line: #D9DFE8;
+  --line-strong: #A9B3C3;
+  --accent: #2B57E0;
+  --accent-soft: #E1E8FC;
+  --on-accent: #FFFFFF;
+  --ok: #17905F;
+  --ok-soft: #DAF1E6;
+  --warn: #B8700C;
+  --warn-soft: #FBEBD2;
+  --err: #C93535;
+  --err-soft: #FCE4E4;
+  --purple: #7A42D9;
+  --purple-soft: #EFE6FD;
+  --skip: #96A0B2;
+  --kw: #8A3FC0;
+  --fn: #1D6FB0;
+  --cm: #7A8699;
+  --num: #C05621;
+  --c1: #0E9384; --c2: #7A5AF8; --c3: #D9456B; --c4: #6F8F1F;
+  --c5: #A15C2E; --c6: #C13FB0; --c7: #2F7F9E; --c8: #A88300;
+  --shadow: 0 2px 12px rgba(24, 32, 46, 0.06);
+  --font-ui: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-display: "Space Grotesk", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1219; --panel: #161C26; --sunk: #11161F; --ink: #E5EAF2; --muted: #93A0B4;
+    --line: #273041; --line-strong: #435069; --accent: #7C9BFF; --accent-soft: #1D2847; --on-accent: #0A1020;
+    --ok: #3FC58F; --ok-soft: #123326; --warn: #F0A53A; --warn-soft: #382810;
+    --err: #FF7676; --err-soft: #3A1A1E; --purple: #B894FF; --purple-soft: #281D42;
+    --skip: #5C667A; --kw: #C99BF5; --fn: #7DB8F0; --cm: #6E7B91; --num: #F6AD55;
+    --c1: #34C7B5; --c2: #A794FF; --c3: #F27A98; --c4: #A6C95A;
+    --c5: #D99566; --c6: #E57BD6; --c7: #6CBEDD; --c8: #E2C14A;
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0E1219; --panel: #161C26; --sunk: #11161F; --ink: #E5EAF2; --muted: #93A0B4;
+  --line: #273041; --line-strong: #435069; --accent: #7C9BFF; --accent-soft: #1D2847; --on-accent: #0A1020;
+  --ok: #3FC58F; --ok-soft: #123326; --warn: #F0A53A; --warn-soft: #382810;
+  --err: #FF7676; --err-soft: #3A1A1E; --purple: #B894FF; --purple-soft: #281D42;
+  --skip: #5C667A; --kw: #C99BF5; --fn: #7DB8F0; --cm: #6E7B91; --num: #F6AD55;
+  --c1: #34C7B5; --c2: #A794FF; --c3: #F27A98; --c4: #A6C95A;
+  --c5: #D99566; --c6: #E57BD6; --c7: #6CBEDD; --c8: #E2C14A;
+  --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14.5px;
+  line-height: 1.72;
+}
+
+/* ==================== Topbar ==================== */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 11px; }
+.brand-badge {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  color: #fff; display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 14px; flex: none;
+}
+.brand h1 { font-family: var(--font-display); font-size: 17px; margin: 0; line-height: 1.2; }
+.brand p { margin: 0; font-size: 11.5px; color: var(--muted); }
+
+.course-pills {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.lesson-pill {
+  border: 1px solid var(--line);
+  background: var(--sunk);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .15s;
+}
+.lesson-pill:hover { border-color: var(--accent); color: var(--ink); }
+.lesson-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.lesson-pill.done:not(.active) {
+  border-color: var(--ok);
+  color: var(--ok);
+  background: var(--ok-soft);
+}
+.top-right { display: flex; align-items: center; gap: 10px; }
+.progress-pill {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 7px;
+}
+.theme-btn {
+  background: var(--sunk); border: 1px solid var(--line-strong);
+  border-radius: 7px; padding: 5px 10px; font-size: 12.5px;
+  cursor: pointer; color: var(--ink); font-family: inherit;
+}
+.theme-btn:hover { border-color: var(--accent); }
+
+/* ==================== Main Split Classroom Layout ==================== */
+.classroom {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 18px 20px 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 1160px) {
+  .classroom { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+/* ==================== LEFT: Interactive Micro-Lesson ==================== */
+.lesson-pane { display: none; animation: fadeIn .22s ease; }
+.lesson-pane.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.lesson-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  display: inline-block;
+}
+.badge.blue { background: var(--accent-soft); color: var(--accent); }
+.badge.green { background: var(--ok-soft); color: var(--ok); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.badge.purple { background: var(--purple-soft); color: var(--purple); }
+.badge.red { background: var(--err-soft); color: var(--err); }
+
+.lesson-title {
+  font-family: var(--font-display);
+  font-size: 23px;
+  line-height: 1.3;
+  margin: 0 0 12px;
+}
+.lesson-lead {
+  color: var(--muted);
+  font-size: 14.5px;
+  margin: 0 0 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lesson-body h3 {
+  font-family: var(--font-display);
+  font-size: 16.5px;
+  margin: 20px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lesson-body p { margin: 0 0 10px; }
+.lesson-body ul, .lesson-body ol { margin: 0 0 12px; padding-left: 20px; }
+.lesson-body li { margin-bottom: 6px; }
+
+.math { font-family: "Times New Roman", Georgia, serif; font-style: italic; font-size: 1.06em; }
+.code-inline {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.formula-box {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 14px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  margin: 12px 0;
+}
+
+.callout {
+  padding: 11px 14px;
+  border-radius: 9px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  margin: 12px 0;
+  font-size: 13.8px;
+}
+.callout.warn { border-left-color: var(--warn); background: color-mix(in srgb, var(--warn-soft) 45%, var(--sunk)); }
+.callout.ok { border-left-color: var(--ok); background: color-mix(in srgb, var(--ok-soft) 45%, var(--sunk)); }
+.callout.err { border-left-color: var(--err); background: color-mix(in srgb, var(--err-soft) 45%, var(--sunk)); }
+
+/* Action Card inside Lesson to drive Right Workbench */
+.try-card {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--panel));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.try-card .try-info { flex: 1 1 220px; }
+.try-card .try-title { font-weight: 700; font-size: 13.5px; color: var(--accent); margin-bottom: 2px; }
+.try-card .try-desc { font-size: 12.8px; color: var(--muted); }
+.try-btns { display: flex; gap: 7px; flex-wrap: wrap; }
+
+/* Inline SVG Diagrams inside Lesson */
+.diagram-box {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 12px 0;
+  text-align: center;
+}
+.diagram-box svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+.diagram-cap { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+/* Case Grid for Real-world Applications */
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+@media (max-width: 640px) { .case-grid { grid-template-columns: 1fr; } }
+.case-card {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.case-card h4 {
+  margin: 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.case-card p { margin: 0; font-size: 12.8px; color: var(--muted); }
+.case-card .case-model {
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+/* Quiz Box */
+.quiz-box {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+}
+.quiz-head {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--purple);
+  margin-bottom: 6px;
+}
+.quiz-q { font-weight: 600; font-size: 14px; margin-bottom: 10px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 7px; }
+.quiz-opt {
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.quiz-opt:hover { border-color: var(--accent); }
+.quiz-opt.correct { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); font-weight: 600; }
+.quiz-opt.wrong { background: var(--err-soft); border-color: var(--err); color: var(--err); }
+.quiz-fb {
+  margin-top: 10px;
+  font-size: 13px;
+  padding: 8px 11px;
+  border-radius: 7px;
+  display: none;
+}
+.quiz-fb.show { display: block; }
+.quiz-fb.ok { background: var(--ok-soft); color: var(--ok); }
+.quiz-fb.err { background: var(--err-soft); color: var(--err); }
+
+/* Lesson Footer Nav */
+.lesson-footer {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Comparison Table */
+.table-wrap { overflow-x: auto; margin: 10px 0; }
+table.cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.cmp-table th, table.cmp-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+table.cmp-table th { background: var(--sunk); font-size: 11.5px; color: var(--muted); font-weight: 700; }
+
+/* Problem Tabs inside Lesson 6 */
+.prob-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+.prob-tab {
+  padding: 6px 12px; border-radius: 7px; border: 1px solid var(--line-strong);
+  background: var(--sunk); color: var(--muted); font-weight: 600; font-size: 12.8px; cursor: pointer;
+}
+.prob-tab.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.prob-pane { display: none; }
+.prob-pane.on { display: block; }
+.code-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  padding: 7px 12px; background: var(--sunk);
+  border: 1px solid var(--line); border-bottom: none;
+  border-radius: 8px 8px 0 0; font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+}
+pre.cpp-code {
+  margin: 0 0 12px; padding: 11px 13px; background: var(--sunk);
+  border: 1px solid var(--line); border-radius: 0 0 8px 8px;
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.56;
+  overflow-x: auto; max-height: 410px;
+}
+.kw { color: var(--kw); font-weight: 500; }
+.fnc { color: var(--fn); }
+.cm { color: var(--cm); font-style: italic; }
+.num { color: var(--num); }
+
+/* ==================== RIGHT: Sticky Interactive Workbench ==================== */
+.workbench-sticky {
+  position: sticky;
+  top: 70px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (max-width: 1160px) {
+  .workbench-sticky { position: static; }
+}
+
+.btn {
+  font-family: var(--font-ui); font-size: 12.5px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 7px; padding: 6px 11px;
+  cursor: pointer; white-space: nowrap; transition: all .15s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); color: var(--on-accent); }
+.btn.sm { padding: 4px 9px; font-size: 12px; }
+.btn:disabled { opacity: 0.42; cursor: not-allowed; }
+
+input, select, textarea {
+  font-family: var(--font-mono); font-size: 12.5px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 7px; padding: 6px 9px; outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+.wb-controls {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+@media (max-width: 600px) {
+  .wb-controls { grid-template-columns: 1fr; }
+}
+.wb-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.wb-field label { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; }
+#nIn { width: 100%; }
+#edges { width: 100%; min-height: 58px; max-height: 110px; resize: vertical; line-height: 1.4; }
+.wb-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; }
+.err-txt { color: var(--err); font-size: 12px; font-weight: 600; }
+
+/* Graph Canvas */
+.graph-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.graph-head-title { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+.legend { display: flex; gap: 9px; flex-wrap: wrap; }
+.legend span { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--muted); }
+.legend i { display: inline-block; }
+.lg-node { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid; }
+.lg-cur { background: var(--accent); border-color: var(--accent); }
+.lg-stk { background: var(--accent-soft); border-color: var(--accent); }
+.lg-edge { width: 15px; height: 0; border-top: 2.2px solid; }
+.lg-tree { border-color: var(--accent); }
+.lg-back { border-color: var(--warn); border-top-style: dashed; }
+.lg-cross { border-color: var(--skip); border-top-style: dotted; }
+
+.canvas-box {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+}
+#graph { display: block; width: 100%; max-height: 320px; height: auto; margin: 0 auto; touch-action: none; user-select: none; }
+#graph text { font-family: var(--font-mono); }
+.edge { fill: none; stroke: var(--line-strong); stroke-width: 1.7; transition: stroke .18s; }
+.edge.tree { stroke: var(--accent); stroke-width: 2.6; }
+.edge.back { stroke: var(--warn); stroke-width: 2.2; stroke-dasharray: 6 4; }
+.edge.cross { stroke: var(--skip); stroke-width: 1.8; stroke-dasharray: 2 4; }
+.edge.cur { stroke: var(--ink); stroke-width: 3.4; stroke-dasharray: none; }
+.mk-def { fill: var(--line-strong); } .mk-tree { fill: var(--accent); } .mk-back { fill: var(--warn); }
+.mk-cross { fill: var(--skip); } .mk-cur { fill: var(--ink); }
+.vn { cursor: grab; }
+.vn circle { fill: var(--panel); stroke: var(--line-strong); stroke-width: 2; transition: fill .2s, stroke .2s; }
+.vn .id { fill: var(--ink); font-size: 14.5px; font-weight: 700; text-anchor: middle; }
+.vn .dl { fill: var(--muted); font-size: 10.5px; text-anchor: middle; }
+.vn.ghost circle { stroke-dasharray: 4 3; }
+.vn.ghost .id { fill: var(--muted); }
+.vn.stk circle { fill: var(--accent-soft); stroke: var(--accent); }
+.vn.cur circle { fill: var(--accent); stroke: var(--accent); stroke-width: 3; }
+.vn.cur .id { fill: var(--on-accent); }
+.vn .ring { fill: none; stroke: none; }
+.vn.target .ring { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 3 3; }
+.vn.hover circle { stroke: var(--ink); stroke-width: 3; }
+.vn.changed .dl { fill: var(--warn); font-weight: 700; }
+
+/* Step Message & Playback */
+.step-box {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 12px;
+}
+.msg { font-size: 13.5px; line-height: 1.5; min-height: 21px; }
+.msg.ret { color: var(--accent); }
+.msg.scc, .msg.end { color: var(--ok); font-weight: 600; }
+
+.tl-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.tl-row button { padding: 4px 9px; font-family: var(--font-mono); font-size: 12px; }
+#slider { flex: 1 1 130px; accent-color: var(--accent); padding: 0; border: none; background: none; box-shadow: none; }
+.counter { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); font-size: 11.5px; min-width: 56px; text-align: right; }
+
+/* Arrays */
+.arow { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 6px; align-items: center; }
+.arow + .arow { margin-top: 5px; }
+.aname { font-family: var(--font-mono); font-weight: 700; font-size: 12px; color: var(--muted); }
+.cells { display: flex; gap: 3px; overflow-x: auto; padding: 1px 1px 3px; }
+.cell {
+  flex: none; min-width: 34px; border: 1px solid var(--line); border-radius: 5px;
+  background: var(--sunk); text-align: center; font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums; padding: 1px 3px 2px; transition: background .2s, border-color .2s;
+}
+.cell i { display: block; font-style: normal; font-size: 9px; color: var(--skip); line-height: 1.1; }
+.cell b { font-size: 12px; font-weight: 600; }
+.cell.zero b { color: var(--skip); font-weight: 400; }
+.cell.cur { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.cell.cur i { color: var(--on-accent); }
+.cell.changed { background: var(--warn-soft); border-color: var(--warn); }
+.cell.hover { border-color: var(--ink); }
+.cell.tos { border-color: var(--accent); border-width: 2px; }
+.stkempty { color: var(--skip); font-family: var(--font-mono); font-size: 12px; padding: 4px; }
+.sccs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.scc { font-family: var(--font-mono); font-size: 11.5px; padding: 3px 9px; border-radius: 999px; border: 1.5px solid; background: var(--panel); }
+
+/* Bottom Debugger Tabs (Code Trace & Call Stack) */
+.dbg-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 8px; }
+.dbg-tab {
+  border: 1px solid var(--line); background: var(--sunk); color: var(--muted);
+  border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.dbg-tab.on { background: var(--accent-soft); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.dbg-pane { display: none; }
+.dbg-pane.on { display: block; }
+
+.fnblock + .fnblock { margin-top: 6px; }
+.code {
+  background: var(--sunk); border: 1px solid var(--line); border-radius: 8px;
+  padding: 4px 0; font-family: var(--font-mono); font-size: 11.8px; line-height: 1.55; overflow-x: auto;
+}
+.line { display: flex; white-space: pre; padding-right: 10px; border-left: 3px solid transparent; }
+.line .ln { width: 26px; flex: none; text-align: right; padding-right: 8px; color: var(--skip); user-select: none; }
+.line.caller { background: color-mix(in srgb, var(--accent) 7%, transparent); border-left-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.line.on { background: var(--accent-soft); border-left-color: var(--accent); font-weight: 500; }
+.line.on .ln { color: var(--accent); }
+
+.globals { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.kv { font-family: var(--font-mono); font-size: 11.5px; background: var(--sunk); border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; }
+.kv span { color: var(--muted); }
+.kv.chg { border-color: var(--warn); background: var(--warn-soft); }
+.stack { display: flex; flex-direction: column; gap: 5px; max-height: 220px; overflow-y: auto; }
+.frame { border: 1px solid var(--line); border-radius: 7px; padding: 6px 9px; font-family: var(--font-mono); font-size: 11.5px; background: var(--sunk); }
+.frame.top { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); background: var(--panel); }
+.frame .sig { white-space: nowrap; overflow-x: auto; }
+.frame .sig .fnc { font-weight: 700; }
+.frame .sig .an { color: var(--muted); }
+.frame .locals { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+.frame .locals:empty { display: none; }
+.frame .depth { float: right; color: var(--skip); font-size: 10.5px; }
+.empty { color: var(--muted); font-size: 12.5px; padding: 6px 0; }
+
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: var(--panel); padding: 7px 16px; border-radius: 999px;
+  font-size: 13px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 90;
+}
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-badge">图</div>
+      <div>
+        <h1>Tarjan 强连通分量与缩点</h1>
+        <p>边学边演的交互式微课 · 零基础到图论建模与竞赛实战</p>
+      </div>
+    </div>
+
+    <div class="course-pills" id="courseNav">
+      <button class="lesson-pill active" onclick="goLesson(0)">1. 动机与缩点</button>
+      <button class="lesson-pill" onclick="goLesson(1)">2. dfn 与四种边</button>
+      <button class="lesson-pill" onclick="goLesson(2)">3. low 与弹栈</button>
+      <button class="lesson-pill" onclick="goLesson(3)">4. 避坑与复杂度</button>
+      <button class="lesson-pill" onclick="goLesson(4)">5. 实际应用案例</button>
+      <button class="lesson-pill" onclick="goLesson(5)">6. 实战题解</button>
+    </div>
+
+    <div class="top-right">
+      <a class="theme-btn" href="../../index.html" style="text-decoration:none;">← 目录</a>
+      <span class="progress-pill" id="progressText">进度 1/6</span>
+      <button class="theme-btn" id="themeToggle" title="切换浅色/深色主题">🌓 主题</button>
+    </div>
+  </div>
+</header>
+
+<main class="classroom">
+
+  <!-- ==================== 左栏：沉浸式交互微课 ==================== -->
+  <section class="panel" id="lessonContainer">
+
+    <!-- ===== 第 1 课 ===== -->
+    <article class="lesson-pane active" id="lesson-0">
+      <div class="lesson-eyebrow"><span class="badge blue">第 1 课 · 动机与直觉</span> <span>约 3 分钟</span></div>
+      <h2 class="lesson-title">为什么有向图需要“强连通分量”与缩点？</h2>
+      <p class="lesson-lead">无向图里“连通”很简单，顺着边能走到就行；但在<strong>单行道（有向图）</strong>里，你能去到对方，对方未必能回来——这就引出了<strong>强连通分量（SCC）</strong>。</p>
+
+      <div class="lesson-body">
+        <h3>1. 什么是强连通分量（SCC）？</h3>
+        <p>在有向图中，如果一个点集内部<strong>任意两点 <span class="math">u</span> 和 <span class="math">v</span> 都能互相到达</strong>（<span class="math">u</span> &rarr; ... &rarr; <span class="math">v</span> 且 <span class="math">v</span> &rarr; ... &rarr; <span class="math">u</span>），并且再也加不进其他点了，这个极大的点集就叫一个<strong>强连通分量（Strongly Connected Component, SCC）</strong>。</p>
+        <ul>
+          <li><strong>生活类比</strong>：城市里的单行道网络。同一个 SCC 里的路口“进了就能互相串门”；一旦开出这个 SCC 走到外面的单行道，就再也回不来了。</li>
+          <li><strong>孤立点也算</strong>：如果一个点没法在任何环里待着，它自己单独构成一个大小为 1 的 SCC。</li>
+        </ul>
+
+        <h3>2. 核心威力：缩点（Condensation）把“带环乱图”变成 DAG！</h3>
+        <p>现实与竞赛中，很多图论算法（如<strong>拓扑排序、DAG 上动态规划</strong>）最怕遇到“环”——一旦有环，DP 状态就会无限循环转移。而如果把每个 SCC <strong>缩成一个超级大点</strong>，原图就彻底消除了所有环，变成了一张干净的<strong>有向无环图（DAG）</strong>！</p>
+
+        <div class="diagram-box">
+          <svg viewBox="0 0 540 165" width="520" height="160">
+            <defs>
+              <marker id="d-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--line-strong)"/>
+              </marker>
+              <marker id="d-ar-ok" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--ok)"/>
+              </marker>
+            </defs>
+            <!-- Left: Original Graph -->
+            <rect x="8" y="10" width="225" height="145" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+            <text x="120" y="28" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--muted)">原图（含 2 个有向环）</text>
+            <rect x="22" y="42" width="88" height="92" rx="12" fill="color-mix(in srgb, var(--c1) 14%, transparent)" stroke="var(--c1)" stroke-dasharray="4 3"/>
+            <rect x="135" y="42" width="84" height="92" rx="12" fill="color-mix(in srgb, var(--c2) 14%, transparent)" stroke="var(--c2)" stroke-dasharray="4 3"/>
+            <!-- edges -->
+            <path d="M52,66 L84,66" stroke="var(--line-strong)" stroke-width="1.8" marker-end="url(#d-ar)"/>
+            <path d="M90,74 L70,108" stroke="var(--line-strong)" stroke-width="1.8" marker-end="url(#d-ar)"/>
+            <path d="M62,108 L44,74" stroke="var(--line-strong)" stroke-width="1.8" marker-end="url(#d-ar)"/>
+            <path d="M100,66 L154,66" stroke="var(--line-strong)" stroke-width="1.8" marker-end="url(#d-ar)"/>
+            <path d="M168,78 L168,105" stroke="var(--line-strong)" stroke-width="1.8" marker-end="url(#d-ar)"/>
+            <path d="M180,105 L180,78" stroke="var(--line-strong)" stroke-width="1.8" marker-end="url(#d-ar)"/>
+            <!-- nodes -->
+            <circle cx="42" cy="66" r="11" fill="var(--panel)" stroke="var(--c1)" stroke-width="2"/><text x="42" y="70" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">1</text>
+            <circle cx="94" cy="66" r="11" fill="var(--panel)" stroke="var(--c1)" stroke-width="2"/><text x="94" y="70" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">2</text>
+            <circle cx="66" cy="116" r="11" fill="var(--panel)" stroke="var(--c1)" stroke-width="2"/><text x="66" y="120" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">3</text>
+            <circle cx="174" cy="66" r="11" fill="var(--panel)" stroke="var(--c2)" stroke-width="2"/><text x="174" y="70" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">4</text>
+            <circle cx="174" cy="116" r="11" fill="var(--panel)" stroke="var(--c2)" stroke-width="2"/><text x="174" y="120" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">5</text>
+
+            <!-- Arrow -->
+            <text x="268" y="80" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ok)">缩点</text>
+            <path d="M244,88 L292,88" stroke="var(--ok)" stroke-width="2.5" marker-end="url(#d-ar-ok)"/>
+
+            <!-- Right: DAG -->
+            <rect x="304" y="10" width="228" height="145" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+            <text x="418" y="28" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--muted)">缩点后（无环 DAG）</text>
+            <rect x="322" y="64" width="76" height="44" rx="10" fill="color-mix(in srgb, var(--c1) 18%, var(--panel))" stroke="var(--c1)" stroke-width="2"/>
+            <text x="360" y="83" text-anchor="middle" font-size="11" font-weight="700" fill="var(--c1)">SCC 1</text>
+            <text x="360" y="99" text-anchor="middle" font-size="10.5" fill="var(--muted)">{1, 2, 3}</text>
+            <path d="M400,86 L438,86" stroke="var(--ok)" stroke-width="2.2" marker-end="url(#d-ar-ok)"/>
+            <rect x="442" y="64" width="74" height="44" rx="10" fill="color-mix(in srgb, var(--c2) 18%, var(--panel))" stroke="var(--c2)" stroke-width="2"/>
+            <text x="479" y="83" text-anchor="middle" font-size="11" font-weight="700" fill="var(--c2)">SCC 2</text>
+            <text x="479" y="99" text-anchor="middle" font-size="10.5" fill="var(--muted)">{4, 5}</text>
+          </svg>
+          <div class="diagram-cap">把每个强连通分量缩成一个超级点后，任意有向图都会变成可以拓扑排序和 DP 的 DAG</div>
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 1：亲眼看 8 个点如何缩成 3 个 SCC</div>
+            <div class="try-desc">右侧已经加载了经典 8 点示例图。点击按钮从头慢动作播放，观察最终同色节点如何聚合成 3 个强连通分量。</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="lessonDemo('presetPlay')">▶ 从头播放示例</button>
+            <button class="btn sm" onclick="lessonDemo('presetEnd')">⏭ 直接看最终结果</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="q0">
+          <div class="quiz-head">随堂小测 · 检查理解</div>
+          <div class="quiz-q">将一张任意有向图中的所有强连通分量（SCC）分别缩成 1 个超级点后，新图可能还存在有向环吗？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q0', false, this, '想想看：如果缩点后还有环 A → B → A，那就说明 A 里的点和 B 里的点其实可以互相到达！它们本来就应该属于同一个 SCC。')">A. 可能存在，取决于原图边数</button>
+            <button class="quiz-opt" onclick="answerQuiz('q0', true, this, '完全正确！如果缩点后还有环，环上所有 SCC 就能两两互达，违背了“极大”强连通分量的定义。因此缩点结果必然是一张有向无环图（DAG）。')">B. 绝对不可能，缩点后必然是 DAG（有向无环图）</button>
+          </div>
+          <div class="quiz-fb" id="fb-q0"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <span style="color:var(--muted); font-size:12.5px;">第 1 / 6 课</span>
+        <button class="btn primary" onclick="goLesson(1)">下一课：dfn 与四种 DFS 边 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 2 课 ===== -->
+    <article class="lesson-pane" id="lesson-1">
+      <div class="lesson-eyebrow"><span class="badge blue">第 2 课 · DFS 森林与时间戳</span> <span>约 3 分钟</span></div>
+      <h2 class="lesson-title">时间戳 <span class="code-inline">dfn</span> 与有向图的四种边</h2>
+      <p class="lesson-lead">Robert Tarjan 发现：只需要<strong>一次深度优先搜索（DFS）</strong>，给每个点盖上“入场时间戳”，就能顺藤摸瓜把所有环揪出来。</p>
+
+      <div class="lesson-body">
+        <h3>1. 什么是 <span class="code-inline">dfn[u]</span> 和栈 <span class="code-inline">stk</span>？</h3>
+        <ul>
+          <li><span class="code-inline">dfn[u]</span>（Discovery Time）：节点 <span class="math">u</span> <strong>第一次被 DFS 访问到时的时间戳</strong>（全局计数器 <span class="code-inline">++tim</span>）。一旦赋值，永不改变。</li>
+          <li><strong>维护一个栈 <span class="code-inline">stk</span> 和标记 <span class="code-inline">ins[u]</span></strong>：每次刚访问到 <span class="math">u</span> 就把它压入栈中（<span class="code-inline">ins[u] = true</span>），代表“当前正在探索、还没确定归属的候选节点”。</li>
+        </ul>
+
+        <h3>2. DFS 视角下，有向边 <span class="math">u &rarr; v</span> 只有三种实战情形</h3>
+        <p>当我们在 <span class="code-inline">tarjan(u)</span> 里枚举出边 <span class="math">u &rarr; v</span> 时，看 <span class="math">v</span> 的状态只会出现以下情况：</p>
+        <div class="table-wrap">
+          <table class="cmp-table">
+            <thead><tr><th>边的类型</th><th>判断条件</th><th>含义与处理</th></tr></thead>
+            <tbody>
+              <tr><td><strong style="color:var(--accent);">树边（Tree）</strong></td><td><span class="code-inline">!dfn[v]</span></td><td><span class="math">v</span> 还没访问过，递归 <span class="code-inline">tarjan(v)</span>；回溯时用 <span class="code-inline">low[v]</span> 更新 <span class="code-inline">low[u]</span>。</td></tr>
+              <tr><td><strong style="color:var(--warn);">指向栈内（Back / 返祖）</strong></td><td><span class="code-inline">dfn[v] &gt; 0 &amp;&amp; ins[v]</span></td><td><span class="math">v</span> 还在栈里！说明 <span class="math">v</span> 是还没结束的祖先（或同支路点），构成环！用 <span class="code-inline">dfn[v]</span> 更新 <span class="code-inline">low[u]</span>。</td></tr>
+              <tr><td><strong style="color:var(--muted);">指向栈外（Cross / 横叉）</strong></td><td><span class="code-inline">dfn[v] &gt; 0 &amp;&amp; !ins[v]</span></td><td><span class="math">v</span> 早就弹栈归属了另一个已完成的 SCC，<strong>绝对不可能从 <span class="math">v</span> 回到 <span class="math">u</span></strong>，直接忽略！</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout warn">
+          <strong>新手最容易问：为什么不能只写 <span class="code-inline">else</span>，一定要写 <span class="code-inline">else if (ins[v])</span>？</strong><br>
+          假设点 2 已经自己弹栈形成了 <span class="code-inline">SCC 1 = {2}</span>（此时 <span class="code-inline">ins[2] = false</span>），后来点 1 有一条单向边 <span class="code-inline">1 &rarr; 2</span>。虽然 <span class="code-inline">dfn[2] &lt; dfn[1]</span>，但 2 根本回不到 1！如果不检查 <span class="code-inline">ins[v]</span>，1 就会误以为自己能通过 2 回到更早的时间戳，导致把本不该合并的点强行绑在一起。
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 2：亲眼见证“横叉边被忽略”</div>
+            <div class="try-desc">加载图 <span class="code-inline">n=3, 边: 1→2, 2→1? 不，试试 1→2 没环: 2→3, 1→2?</span> 让我们从 1 出发，但先让 1→3 形成独立 SCC，再看 2→3 这条<strong>灰色虚线横叉边</strong>如何被安全跳过！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="lessonDemo('crossEdge')">▶ 演示横叉边</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="q1">
+          <div class="quiz-head">随堂小测 · 检查理解</div>
+          <div class="quiz-q">在 Tarjan 算法中，当枚举到边 <span class="math">u &rarr; v</span> 且发现 <span class="code-inline">dfn[v] &ne; 0</span> 但 <span class="code-inline">ins[v] == false</span> 时，说明什么？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q1', false, this, '如果能互相到达，v 此时不可能已经完成弹栈（否则 u 也应该在同一个 SCC 里一起弹出）。')">A. u 和 v 一定在同一个强连通分量里</button>
+            <button class="quiz-opt" onclick="answerQuiz('q1', true, this, '完全正确！ins[v] == false 说明 v 所在的 SCC 已经彻底闭合弹栈了，从 v 出发绝不可能走回 u，这条横叉边必须忽略。')">B. v 已经属于一个已完成的 SCC，无法再回到 u，应忽略该边</button>
+          </div>
+          <div class="quiz-fb" id="fb-q1"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(0)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(2)">下一课：low[u] 与弹栈时机 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 3 课 ===== -->
+    <article class="lesson-pane" id="lesson-2">
+      <div class="lesson-eyebrow"><span class="badge purple">第 3 课 · 算法灵魂</span> <span>约 4 分钟</span></div>
+      <h2 class="lesson-title">核心灵魂：<span class="code-inline">low[u]</span> 的传递与弹栈</h2>
+      <p class="lesson-lead">如果说 <span class="code-inline">dfn[u]</span> 是出生证明，那么 <span class="code-inline">low[u]</span> 就是<strong>“我能靠着小弟和捷径，最多追溯到多早的祖先”</strong>。</p>
+
+      <div class="lesson-body">
+        <h3>1. <span class="code-inline">low[u]</span> 的精确定义</h3>
+        <div class="formula-box">
+          low[u] = u 及其子树节点，通过最多一条“指向栈内的边”，能追溯到的最小 dfn
+        </div>
+        <p>在代码里只有两处会更新 <span class="code-inline">low[u]</span>：</p>
+        <ol>
+          <li><strong>树边回溯时</strong>：<span class="code-inline">low[u] = min(low[u], low[v])</span> —— “我儿子 <span class="math">v</span> 能回到那么早，那我也能顺着儿子回到那么早”。</li>
+          <li><strong>撞见栈内节点时</strong>：<span class="code-inline">low[u] = min(low[u], dfn[v])</span> —— “我自己直接抄近道连回了栈里的 <span class="math">v</span>”。</li>
+        </ol>
+
+        <h3>2. 为什么 <span class="code-inline">dfn[u] == low[u]</span> 就刚好能弹出一整个 SCC？</h3>
+        <p>当 <span class="code-inline">tarjan(u)</span> 跑完所有出边准备返回时，如果发现 <span class="code-inline">dfn[u] == low[u]</span>，意味着什么？</p>
+        <div class="callout ok">
+          <strong>这意味着：<span class="math">u</span> 和它子树里所有还没弹栈的节点，没有任何一条边能逃到 <span class="math">u</span> 的祖先那里去！</strong><br>
+          而栈里位于 <span class="math">u</span> 上方的那些节点，又全都通过子树/环路留在了这里（否则它们早就在自己的分支里满足 <span class="code-inline">dfn == low</span> 先弹出去了）。<br>
+          所以此时<strong>从栈顶一直弹到 <span class="math">u</span> 为止</strong>，弹出来的这批点恰好就是一个完整的强连通分量！
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 3：观察“嵌套双环”中 low 值的向上传递</div>
+            <div class="try-desc">加载一个嵌套双环图，特别注意节点 2、3、4 的 <span class="code-inline">low</span> 值是如何接力变成 1，直到最后回到根节点 1 才一次性全部弹栈的。</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="lessonDemo('nestedCycle')">▶ 演示嵌套双环</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="q2">
+          <div class="quiz-head">随堂小测 · 检查理解</div>
+          <div class="quiz-q">在 <span class="code-inline">tarjan(u)</span> 结束所有出边遍历后，发现 <span class="code-inline">dfn[u] = 2</span> 而 <span class="code-inline">low[u] = 1</span>。此时应该做什么？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q2', false, this, '不能弹！low[u] = 1 说明 u 还能回到更早的节点（dfn=1），它不是当前 SCC 的最高根。如果现在弹栈就把一个大环拆碎了！')">A. 立刻把栈顶到 u 的元素弹出为一个 SCC</button>
+            <button class="quiz-opt" onclick="answerQuiz('q2', true, this, '完全正确！dfn[u] != low[u] 说明 u 能够追溯到更早的祖先，必须继续留在栈里，等回到那个祖先节点时再一并清算弹栈。')">B. 什么都不弹，让 u 继续留在栈里，直接返回上一层递归</button>
+          </div>
+          <div class="quiz-fb" id="fb-q2"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(1)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(3)">下一课：常见易错点与复杂度 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 4 课 ===== -->
+    <article class="lesson-pane" id="lesson-3">
+      <div class="lesson-eyebrow"><span class="badge warn">第 4 课 · 避坑指南</span> <span>约 2 分钟</span></div>
+      <h2 class="lesson-title">新手必看：三大易错点与时空复杂度</h2>
+      <p class="lesson-lead">Tarjan 算法代码只有短短 20 行，但细节一错就会全盘 WA。这里帮你把最常踩的坑一次性标红。</p>
+
+      <div class="lesson-body">
+        <h3>1. 三大高频易错点</h3>
+        <ul>
+          <li><strong>坑 1：只从 1 号点调用 <span class="code-inline">tarjan(1)</span></strong>。<br>
+          有向图极可能不连通，或者 1 号点根本没有出边！必须写循环：
+          <span class="code-inline">for (int i = 1; i &lt;= n; i++) if (!dfn[i]) tarjan(i);</span></li>
+          <li><strong>坑 2：混用 <span class="code-inline">dfn[v]</span> 与 <span class="code-inline">low[v]</span></strong>。<br>
+          在求强连通分量（SCC）时，碰到栈内节点 <span class="math">v</span> 推荐写 <span class="code-inline">low[u] = min(low[u], dfn[v])</span>。虽然在 SCC 中写成 <span class="code-inline">low[v]</span> 侥幸也能对，但在求<strong>无向图割点 / 点双连通分量</strong>时写成 <span class="code-inline">low[v]</span> 会直接 WA！养成固定写 <span class="code-inline">dfn[v]</span> 的好习惯。</li>
+          <li><strong>坑 3：数组大小与自环/重边</strong>。<br>
+          自环（<span class="math">u &rarr; u</span>）和重边不需要特判，Tarjan 天然能正确处理；但缩点建新图时记得把自环去掉（<span class="code-inline">if (scc[u] != scc[v])</span>），否则新图会多出多余自环影响拓扑排序入度！</li>
+        </ul>
+
+        <h3>2. 为什么时间复杂度能做到线性 <span class="math">O</span>(<span class="math">V</span> + <span class="math">E</span>)？</h3>
+        <ul>
+          <li>每个点最多被 <span class="code-inline">tarjan()</span> 访问 <strong>1 次</strong>，入栈 <strong>1 次</strong>，出栈 <strong>1 次</strong>。</li>
+          <li>每条有向边最多在 <span class="code-inline">for (int v : g[u])</span> 中被检查 <strong>1 次</strong>。</li>
+          <li>因此总时间复杂度严格为 <span class="badge green">O(V + E)</span>，空间复杂度为 <span class="badge green">O(V + E)</span>，百万级点数也能毫秒级跑完！</li>
+        </ul>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 4：不连通图的多轮 DFS</div>
+            <div class="try-desc">加载包含两个互不相连连通块的图。观察 <span class="code-inline">main()</span> 中的循环如何在第一轮结束后，继续从尚未访问的节点开启第二次 DFS。</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="lessonDemo('disconnected')">▶ 演示不连通图</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="q3">
+          <div class="quiz-head">随堂小测 · 检查理解</div>
+          <div class="quiz-q">如果原图中有边 <span class="math">u &rarr; v</span>，在 Tarjan 缩点建新 DAG 图时，什么时候才需要在新图中连边 <span class="code-inline">scc[u] &rarr; scc[v]</span>？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q3', false, this, '如果 scc[u] == scc[v]，连出来的就是一条指向自己的自环！这会导致后续拓扑排序时入度永远大于 0。')">A. 原图有边就全部连上，不需要判断</button>
+            <button class="quiz-opt" onclick="answerQuiz('q3', true, this, '完全正确！只有当两端点属于不同的强连通分量（scc[u] != scc[v]）时才连边，这样就能保证新图绝对没有自环。')">B. 仅当 scc[u] != scc[v] 时才连边</button>
+          </div>
+          <div class="quiz-fb" id="fb-q3"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(2)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(4)">下一课：实际应用案例 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 5 课：实际应用案例 ===== -->
+    <article class="lesson-pane" id="lesson-4">
+      <div class="lesson-eyebrow"><span class="badge green">第 5 课 · 实际应用</span> <span>工程与竞赛高频场景</span></div>
+      <h2 class="lesson-title">Tarjan SCC 在现实工程与算法中的四大应用</h2>
+      <p class="lesson-lead">强连通分量绝不只是竞赛考题——编译器、包管理器、路由网络和逻辑求解器每天都在底层跑着 Tarjan 算法。</p>
+
+      <div class="lesson-body">
+        <div class="case-grid">
+          <div class="case-card">
+            <h4>📦 1. 软件循环依赖检测 <span class="badge blue">工程</span></h4>
+            <p>大型项目或包管理器（npm / Maven / C++ 模块）中，如果模块 A 导入 B、B 导入 C、C 又导入 A，就会引发编译死锁或初始化崩溃。</p>
+            <div class="case-model">
+              <strong>建模</strong>：模块为点，依赖为有向边。所有大小 &ge; 2 的 SCC 就是全部<strong>循环依赖死锁环</strong>；缩点后的拓扑序就是合法构建顺序！
+            </div>
+          </div>
+
+          <div class="case-card">
+            <h4>📣 2. 社交网络“核心圈层” <span class="badge green">图分析</span></h4>
+            <p>在微博/关注关系图里，若 A 关注 B 则连边 A &rarr; B，如何找出“被全网所有人（直接或间接）关注”的明星群体？</p>
+            <div class="case-model">
+              <strong>建模</strong>：缩点成 DAG 后，如果整个图<strong>恰好只有 1 个出度为 0 的 SCC</strong>，这个 SCC 里的所有人就是答案；若有多个则无解！
+            </div>
+          </div>
+
+          <div class="case-card">
+            <h4>🧩 3. 2-SAT 布尔逻辑求解 <span class="badge purple">约束求解</span></h4>
+            <p>给定一堆二选一约束（如“要么选 A，要么不选 B”），判断是否存在一组满足所有条件的真假赋值方案。</p>
+            <div class="case-model">
+              <strong>建模</strong>：拆成蕴含边 <span class="math">&not;A &rarr; B</span> 和 <span class="math">&not;B &rarr; A</span>。若 <span class="math">x</span> 与 <span class="math">&not;x</span> 同属一个 SCC 则无解；否则直接取 Tarjan 编号较小的（<span class="code-inline">scc[x] &lt; scc[&not;x]</span>）！
+            </div>
+          </div>
+
+          <div class="case-card">
+            <h4>🛣️ 4. 单向路网高可用改造 <span class="badge warn">网络规划</span></h4>
+            <p>城市单向交通网（或机房单向路由）目前不能全网互通，最少需要新建几条单向边才能让任意两点互达？</p>
+            <div class="case-model">
+              <strong>建模</strong>：缩点成 DAG（若只有 1 个 SCC 答案为 0）。统计缩点后<strong>入度为 0 的点数 <span class="math">P</span></strong> 和<strong>出度为 0 的点数 <span class="math">Q</span></strong>，答案就是 <span class="code-inline">max(P, Q)</span>！
+            </div>
+          </div>
+        </div>
+
+        <div class="callout ok">
+          <strong>一个隐藏彩蛋：Tarjan 算出的 <span class="code-inline">scc[]</span> 编号自带“逆拓扑序”！</strong><br>
+          由于先完成、先弹栈的总是处于有向图下游（没有出边或出边已走完）的分量，所以如果有边 <span class="code-inline">SCC_a &rarr; SCC_b</span>，必然先弹出 <span class="code-inline">SCC_b</span> 再弹出 <span class="code-inline">SCC_a</span>，即 <strong><span class="code-inline">scc[b] &lt; scc[a]</span></strong>！做缩点 DP 时甚至不用再写一遍拓扑排序，直接按 <span class="code-inline">cnt</span> 倒序枚举即可！
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 5：体验“软件模块循环依赖检测”</div>
+            <div class="try-desc">右侧加载一个 7 模块的工程依赖图：其中模块 {1,2,3} 互相循环依赖，{5,6} 互相依赖，其余单向引用。看看 Tarjan 如何一眼揪出所有死锁环并给出逆拓扑序！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="lessonDemo('appDep')">▶ 演示依赖检测</button>
+            <button class="btn sm" onclick="lessonDemo('appRoad')">▶ 演示单向路网</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="q4">
+          <div class="quiz-head">随堂小测 · 应用建模</div>
+          <div class="quiz-q">某项目有 6 个模块，运行 Tarjan 后得到 3 个强连通分量：SCC 1 = {5, 6}，SCC 2 = {4}，SCC 3 = {1, 2, 3}。已知存在依赖边 1 &rarr; 4 和 4 &rarr; 5。请问哪个 SCC 是整张图的“最下游（无出度）”？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q4', true, this, '完全正确！Tarjan 弹栈顺序天然是 DAG 的逆拓扑序：最下游、无出度的 SCC 最先完成并弹出，所以它的 scc 编号最小（SCC 1）。')">A. SCC 1 = {5, 6}，因为最下游的分量最先弹栈、编号最小</button>
+            <button class="quiz-opt" onclick="answerQuiz('q4', false, this, '刚好反啦！1 → 4 → 5 说明 5 是最下游的，DFS 走到 5 走不动了最先返回弹栈，所以 SCC 1 编号最小。')">B. SCC 3 = {1, 2, 3}，因为编号越大越靠后</button>
+          </div>
+          <div class="quiz-fb" id="fb-q4"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(3)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(5)">下一课：梯度实战题解 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 6 课：实战题解 ===== -->
+    <article class="lesson-pane" id="lesson-5">
+      <div class="lesson-eyebrow"><span class="badge green">第 6 课 · 学以致用</span> <span>模板到综合</span></div>
+      <h2 class="lesson-title">三道梯度经典实战题解（附可交 C++ 代码）</h2>
+      <p class="lesson-lead">掌握原理和应用场景后，这三道由浅入深的洛谷经典题将帮你把 Tarjan SCC 彻底变成肌肉记忆。</p>
+
+      <div class="lesson-body">
+        <div class="prob-tabs">
+          <button class="prob-tab on" onclick="switchProb(0)">① 模板：B3609 强连通分量</button>
+          <button class="prob-tab" onclick="switchProb(1)">② 缩点 DP：P3387 【模板】缩点</button>
+          <button class="prob-tab" onclick="switchProb(2)">③ 综合应用：P2341 受欢迎的牛</button>
+        </div>
+
+        <!-- P1: B3609 -->
+        <div class="prob-pane on" id="prob-0">
+          <p><strong>题意：</strong>给定 <span class="math">n</span> 个点 <span class="math">m</span> 条边的有向图，输出强连通分量的个数，并按每个分量最小顶点编号从小到大的顺序，依次输出每个强连通分量的所有顶点。</p>
+          <p><strong>思路：</strong>标准 Tarjan 模板题。跑完 <span class="code-inline">tarjan()</span> 后，把每个分量内部节点升序排序，再按各分量的最小节点编号排序输出即可。</p>
+          <div class="code-header">
+            <span>Luogu_B3609_Tarjan_SCC.cpp（O(n log n + m)）</span>
+            <div>
+              <button class="btn sm" onclick="loadGraphPreset(6, '1 2\n2 3\n3 1\n2 4\n4 5\n5 6\n6 4')">在右侧加载样例</button>
+              <button class="btn sm" onclick="copyCode('code-p1')">📋 复制</button>
+            </div>
+          </div>
+          <pre class="cpp-code" id="code-p1"><span class="kw">#include</span> &lt;bits/stdc++.h&gt;
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">10005</span>;
+vector&lt;<span class="kw">int</span>&gt; g[N];
+<span class="kw">int</span> dfn[N], low[N], tim, stk[N], top;
+<span class="kw">bool</span> ins[N];
+vector&lt;vector&lt;<span class="kw">int</span>&gt;&gt; sccs;
+
+<span class="kw">void</span> <span class="fnc">tarjan</span>(<span class="kw">int</span> u) {
+    dfn[u] = low[u] = ++tim;
+    stk[++top] = u; ins[u] = <span class="kw">true</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> v : g[u]) {
+        <span class="kw">if</span> (!dfn[v]) {
+            <span class="fnc">tarjan</span>(v);
+            low[u] = <span class="fnc">min</span>(low[u], low[v]);
+        } <span class="kw">else if</span> (ins[v]) {
+            low[u] = <span class="fnc">min</span>(low[u], dfn[v]);
+        }
+    }
+    <span class="kw">if</span> (dfn[u] == low[u]) {
+        vector&lt;<span class="kw">int</span>&gt; comp;
+        <span class="kw">int</span> x;
+        <span class="kw">do</span> {
+            x = stk[top--]; ins[x] = <span class="kw">false</span>;
+            comp.<span class="fnc">push_back</span>(x);
+        } <span class="kw">while</span> (x != u);
+        <span class="fnc">sort</span>(comp.<span class="fnc">begin</span>(), comp.<span class="fnc">end</span>());
+        sccs.<span class="fnc">push_back</span>(comp);
+    }
+}
+
+<span class="kw">int</span> <span class="fnc">main</span>() {
+    ios::sync_with_stdio(<span class="kw">false</span>); cin.tie(<span class="kw">nullptr</span>);
+    <span class="kw">int</span> n, m; cin &gt;&gt; n &gt;&gt; m;
+    <span class="kw">while</span> (m--) {
+        <span class="kw">int</span> u, v; cin &gt;&gt; u &gt;&gt; v;
+        g[u].<span class="fnc">push_back</span>(v);
+    }
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= n; i++) <span class="kw">if</span> (!dfn[i]) <span class="fnc">tarjan</span>(i);
+    <span class="fnc">sort</span>(sccs.<span class="fnc">begin</span>(), sccs.<span class="fnc">end</span>());
+    cout &lt;&lt; sccs.<span class="fnc">size</span>() &lt;&lt; <span class="num">'\n'</span>;
+    <span class="kw">for</span> (<span class="kw">auto</span> &amp;c : sccs) {
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; (<span class="kw">int</span>)c.<span class="fnc">size</span>(); i++)
+            cout &lt;&lt; c[i] &lt;&lt; (i + <span class="num">1</span> == (<span class="kw">int</span>)c.<span class="fnc">size</span>() ? <span class="num">'\n'</span> : <span class="num">' '</span>);
+    }
+}</pre>
+        </div>
+
+        <!-- P2: P3387 -->
+        <div class="prob-pane" id="prob-1">
+          <p><strong>题意：</strong>给定一个点带权的有向图（允许重复经过点与边，但点权只累加一次），求一条路径使得经过的点权之和最大。</p>
+          <p><strong>思路：</strong>因为可以重复走，只要进入一个 SCC 就一定能拿光该 SCC 的所有点权！用 Tarjan 把每个 SCC 缩成一个点（新点权 = 内部点权之和），得到 DAG 后，利用 Tarjan 编号自带的逆拓扑序直接做一遍线性 DP：<span class="code-inline">dp[u] = val[u] + max(dp[v])</span>。</p>
+          <div class="code-header">
+            <span>Luogu_P3387_Condensation_DP.cpp（O(n + m)）</span>
+            <div>
+              <button class="btn sm" onclick="loadGraphPreset(6, '1 2\n2 1\n2 3\n3 4\n4 5\n5 3\n4 6')">在右侧加载样例</button>
+              <button class="btn sm" onclick="copyCode('code-p2')">📋 复制</button>
+            </div>
+          </div>
+          <pre class="cpp-code" id="code-p2"><span class="kw">#include</span> &lt;bits/stdc++.h&gt;
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">10005</span>;
+vector&lt;<span class="kw">int</span>&gt; g[N], dag[N];
+<span class="kw">int</span> a[N], dfn[N], low[N], tim, stk[N], top;
+<span class="kw">int</span> scc[N], cnt, sumW[N], dp[N];
+<span class="kw">bool</span> ins[N];
+
+<span class="kw">void</span> <span class="fnc">tarjan</span>(<span class="kw">int</span> u) {
+    dfn[u] = low[u] = ++tim;
+    stk[++top] = u; ins[u] = <span class="kw">true</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> v : g[u]) {
+        <span class="kw">if</span> (!dfn[v]) { <span class="fnc">tarjan</span>(v); low[u] = <span class="fnc">min</span>(low[u], low[v]); }
+        <span class="kw">else if</span> (ins[v]) low[u] = <span class="fnc">min</span>(low[u], dfn[v]);
+    }
+    <span class="kw">if</span> (dfn[u] == low[u]) {
+        ++cnt; <span class="kw">int</span> x;
+        <span class="kw">do</span> {
+            x = stk[top--]; ins[x] = <span class="kw">false</span>;
+            scc[x] = cnt; sumW[cnt] += a[x];
+        } <span class="kw">while</span> (x != u);
+    }
+}
+
+<span class="kw">int</span> <span class="fnc">main</span>() {
+    ios::sync_with_stdio(<span class="kw">false</span>); cin.tie(<span class="kw">nullptr</span>);
+    <span class="kw">int</span> n, m; cin &gt;&gt; n &gt;&gt; m;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= n; i++) cin &gt;&gt; a[i];
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>, u, v; i &lt; m; i++) {
+        cin &gt;&gt; u &gt;&gt; v; g[u].<span class="fnc">push_back</span>(v);
+    }
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= n; i++) <span class="kw">if</span> (!dfn[i]) <span class="fnc">tarjan</span>(i);
+
+    <span class="cm">// 缩点建新 DAG</span>
+    <span class="kw">for</span> (<span class="kw">int</span> u = <span class="num">1</span>; u &lt;= n; u++)
+        <span class="kw">for</span> (<span class="kw">int</span> v : g[u])
+            <span class="kw">if</span> (scc[u] != scc[v]) dag[scc[u]].<span class="fnc">push_back</span>(scc[v]);
+
+    <span class="cm">// 逆拓扑序：1..cnt 本身就是从下游到上游，直接转移</span>
+    <span class="kw">int</span> ans = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= cnt; i++) {
+        <span class="kw">int</span> best = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="kw">int</span> nxt : dag[i]) best = <span class="fnc">max</span>(best, dp[nxt]);
+        dp[i] = sumW[i] + best;
+        ans = <span class="fnc">max</span>(ans, dp[i]);
+    }
+    cout &lt;&lt; ans &lt;&lt; <span class="num">'\n'</span>;
+}</pre>
+        </div>
+
+        <!-- P3: P2341 -->
+        <div class="prob-pane" id="prob-2">
+          <p><strong>题意：</strong><span class="math">N</span> 头牛，给定若干单向“仰慕”关系（<span class="math">A &rarr; B</span> 表示 A 认为 B 受欢迎，仰慕具有传递性）。求有多少头牛被<strong>除自己外的所有牛</strong>仰慕？</p>
+          <p><strong>思路：</strong>缩点成 DAG 后，一头牛想被全图所有分量到达，它所在的 SCC <strong>出度必须为 0</strong>；如果有 2 个及以上出度为 0 的 SCC，它们互相到不了对方，答案直接是 <span class="code-inline">0</span>；如果<strong>恰好只有 1 个出度为 0 的 SCC</strong>，答案就是该 SCC 的大小！</p>
+          <div class="code-header">
+            <span>Luogu_P2341_Popular_Cows.cpp（O(n + m)）</span>
+            <div>
+              <button class="btn sm" onclick="loadGraphPreset(5, '1 2\n2 3\n3 4\n4 5\n5 4\n1 3')">在右侧加载样例</button>
+              <button class="btn sm" onclick="copyCode('code-p3')">📋 复制</button>
+            </div>
+          </div>
+          <pre class="cpp-code" id="code-p3"><span class="kw">#include</span> &lt;bits/stdc++.h&gt;
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">10005</span>;
+vector&lt;<span class="kw">int</span>&gt; g[N];
+<span class="kw">int</span> dfn[N], low[N], tim, stk[N], top, scc[N], sz[N], outDeg[N], cnt;
+<span class="kw">bool</span> ins[N];
+
+<span class="kw">void</span> <span class="fnc">tarjan</span>(<span class="kw">int</span> u) {
+    dfn[u] = low[u] = ++tim;
+    stk[++top] = u; ins[u] = <span class="kw">true</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> v : g[u]) {
+        <span class="kw">if</span> (!dfn[v]) { <span class="fnc">tarjan</span>(v); low[u] = <span class="fnc">min</span>(low[u], low[v]); }
+        <span class="kw">else if</span> (ins[v]) low[u] = <span class="fnc">min</span>(low[u], dfn[v]);
+    }
+    <span class="kw">if</span> (dfn[u] == low[u]) {
+        ++cnt; <span class="kw">int</span> x;
+        <span class="kw">do</span> {
+            x = stk[top--]; ins[x] = <span class="kw">false</span>;
+            scc[x] = cnt; sz[cnt]++;
+        } <span class="kw">while</span> (x != u);
+    }
+}
+
+<span class="kw">int</span> <span class="fnc">main</span>() {
+    ios::sync_with_stdio(<span class="kw">false</span>); cin.tie(<span class="kw">nullptr</span>);
+    <span class="kw">int</span> n, m; cin &gt;&gt; n &gt;&gt; m;
+    <span class="kw">while</span> (m--) {
+        <span class="kw">int</span> u, v; cin &gt;&gt; u &gt;&gt; v;
+        g[u].<span class="fnc">push_back</span>(v);
+    }
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= n; i++) <span class="kw">if</span> (!dfn[i]) <span class="fnc">tarjan</span>(i);
+
+    <span class="kw">for</span> (<span class="kw">int</span> u = <span class="num">1</span>; u &lt;= n; u++)
+        <span class="kw">for</span> (<span class="kw">int</span> v : g[u])
+            <span class="kw">if</span> (scc[u] != scc[v]) outDeg[scc[u]]++;
+
+    <span class="kw">int</span> zeroOut = <span class="num">0</span>, ans = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= cnt; i++) {
+        <span class="kw">if</span> (outDeg[i] == <span class="num">0</span>) {
+            zeroOut++;
+            ans = sz[i];
+        }
+    }
+    cout &lt;&lt; (zeroOut == <span class="num">1</span> ? ans : <span class="num">0</span>) &lt;&lt; <span class="num">'\n'</span>;
+}</pre>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(4)">← 上一课</button>
+        <span style="color:var(--ok); font-weight:600; font-size:13px;">🎉 全部 6 课完成！欢迎在右侧自由输入任意有向图实验</span>
+      </div>
+    </article>
+
+  </section>
+
+  <!-- ==================== 右栏：吸顶实时交互动画台 ==================== -->
+  <aside class="workbench-sticky">
+    <section class="panel">
+      <div class="wb-controls">
+        <div class="wb-field">
+          <label for="nIn">点数 n (1~16)</label>
+          <input id="nIn" type="number" min="1" max="16" value="8">
+        </div>
+        <div class="wb-field">
+          <label for="edges">有向边（每行 “u v” 表示 u &rarr; v，修改即重算）</label>
+          <textarea id="edges" spellcheck="false">1 2
+2 3
+3 1
+3 7
+7 8
+8 7
+2 4
+4 5
+5 6
+6 4
+6 7</textarea>
+        </div>
+      </div>
+      <div class="wb-row">
+        <button class="btn sm" id="presetBtn" type="button">示例图</button>
+        <button class="btn sm" id="randBtn" type="button">随机图</button>
+        <button class="btn sm" id="relayoutBtn" type="button">重新排布</button>
+        <span id="edgeErr" class="err-txt" hidden></span>
+      </div>
+
+      <div class="graph-head" style="margin-top:10px;">
+        <span class="graph-head-title">有向图与 Tarjan 实时画布（可拖动点）</span>
+        <div class="legend">
+          <span><i class="lg-node lg-cur"></i>当前点</span>
+          <span><i class="lg-node lg-stk"></i>在栈中</span>
+          <span><i class="lg-edge lg-tree"></i>树边</span>
+          <span><i class="lg-edge lg-back"></i>指向栈内</span>
+          <span><i class="lg-edge lg-cross"></i>横叉边</span>
+        </div>
+      </div>
+
+      <div class="canvas-box">
+        <svg id="graph" viewBox="0 0 600 360" role="img" aria-label="有向图与 Tarjan 过程"></svg>
+      </div>
+
+      <div class="step-box" style="margin-top:10px;">
+        <div id="msg" class="msg" aria-live="polite"></div>
+        <div class="tl-row">
+          <button class="btn sm" id="firstBtn" type="button" title="回到开头">|&lt;</button>
+          <button class="btn sm" id="prevBtn" type="button" title="上一步 (←)">&lt;</button>
+          <button class="btn sm primary" id="playBtn" type="button" title="播放/暂停 (空格)">▶ 播放</button>
+          <button class="btn sm" id="nextBtn" type="button" title="下一步 (→)">&gt;</button>
+          <button class="btn sm" id="lastBtn" type="button" title="跳到结尾">&gt;|</button>
+          <input id="slider" type="range" min="0" max="0" value="0" aria-label="进度">
+          <span id="counter" class="counter"></span>
+          <select id="speed" aria-label="播放速度">
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="2">2×</option>
+            <option value="4">4×</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" style="padding:14px 16px;">
+      <div id="arrays"></div>
+    </section>
+
+    <section class="panel" style="padding:14px 16px;">
+      <div class="dbg-tabs">
+        <button class="dbg-tab on" onclick="switchDbgTab(0)">C++ 伪代码追踪</button>
+        <button class="dbg-tab" onclick="switchDbgTab(1)">调用栈与全局变量</button>
+      </div>
+      <div class="dbg-pane on" id="dbg-0">
+        <div id="code"></div>
+      </div>
+      <div class="dbg-pane" id="dbg-1">
+        <div id="vars"></div>
+      </div>
+    </section>
+  </aside>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== 1. 主题与微课导航 ====================
+const themeBtn = document.getElementById('themeToggle');
+const savedTheme = localStorage.getItem('algo_theme');
+if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+themeBtn.onclick = () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('algo_theme', next);
+};
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._tm);
+  showToast._tm = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+let currentLesson = 0;
+const visitedLessons = new Set([0]);
+function goLesson(idx) {
+  currentLesson = idx;
+  visitedLessons.add(idx);
+  document.querySelectorAll('.lesson-pane').forEach((el, i) => el.classList.toggle('active', i === idx));
+  document.querySelectorAll('.lesson-pill').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+    if (visitedLessons.has(i) && i !== idx) el.classList.add('done');
+  });
+  document.getElementById('progressText').textContent = `进度 ${visitedLessons.size}/6`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function answerQuiz(qid, isCorrect, btn, fbText) {
+  const box = document.querySelector(`[data-quiz="${qid}"]`);
+  box.querySelectorAll('.quiz-opt').forEach(b => b.classList.remove('correct', 'wrong'));
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  const fb = document.getElementById('fb-' + qid);
+  fb.textContent = fbText;
+  fb.className = 'quiz-fb show ' + (isCorrect ? 'ok' : 'err');
+}
+
+function switchProb(idx) {
+  document.querySelectorAll('.prob-tab').forEach((el, i) => el.classList.toggle('on', i === idx));
+  document.querySelectorAll('.prob-pane').forEach((el, i) => el.classList.toggle('on', i === idx));
+}
+
+function switchDbgTab(idx) {
+  document.querySelectorAll('.dbg-tab').forEach((el, i) => el.classList.toggle('on', i === idx));
+  document.querySelectorAll('.dbg-pane').forEach((el, i) => el.classList.toggle('on', i === idx));
+}
+
+function copyCode(id) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('已复制 C++ 代码到剪贴板！'));
+}
+
+// ==================== 2. Tarjan SCC 核心引擎 ====================
+const $ = s => document.querySelector(s);
+
+const CODE = {
+  main: [
+    ['M0', 'for (int i = 1; i <= n; i++)'],
+    ['M1', '  if (!dfn[i]) tarjan(i);'],
+  ],
+  tarjan: [
+    ['T0', 'void tarjan(int u) {'],
+    ['T1', '  dfn[u] = low[u] = ++tim;'],
+    ['T2', '  stk[++top] = u; ins[u] = true;'],
+    ['T3', '  for (int v : g[u]) {'],
+    ['T4', '    if (!dfn[v]) {'],
+    ['T5', '      tarjan(v);'],
+    ['T6', '      low[u] = min(low[u], low[v]);'],
+    ['T7', '    } else if (ins[v]) {'],
+    ['T8', '      low[u] = min(low[u], dfn[v]);'],
+    [null, '    }'],
+    [null, '  }'],
+    ['T9', '  if (dfn[u] == low[u]) {'],
+    ['T10', '    ++cnt; int x;'],
+    ['T11', '    do {'],
+    ['T12', '      x = stk[top--]; ins[x] = false;'],
+    ['T13', '      scc[x] = cnt;'],
+    ['T14', '    } while (x != u);'],
+    [null, '  }'],
+    [null, '}'],
+  ],
+};
+
+let N = 0, EDGES = [], STEPS = [], pos = 0, timer = null, POS = [];
+
+function runTarjan(n, edges) {
+  const g = Array.from({ length: n + 1 }, () => []);
+  edges.forEach(([u, v], ei) => g[u].push({ v, ei }));
+  const R = {
+    dfn: Array(n + 1).fill(0), low: Array(n + 1).fill(0), ins: Array(n + 1).fill(false), scc: Array(n + 1).fill(0),
+    stk: [], tim: 0, cnt: 0, sccs: [], et: {}, curE: null, target: null, frames: [], steps: [],
+    ch: new Set(), chG: new Set(),
+  };
+  const snap = (line, msg, kind = '') => {
+    const top = R.frames[R.frames.length - 1];
+    if (top && line) top.line = line;
+    R.steps.push({
+      dfn: R.dfn.slice(), low: R.low.slice(), ins: R.ins.slice(), scc: R.scc.slice(), stk: R.stk.slice(),
+      tim: R.tim, cnt: R.cnt, sccs: R.sccs.map(s => ({ id: s.id, members: s.members.slice() })),
+      et: { ...R.et }, curE: R.curE, target: R.target,
+      frames: R.frames.map(f => ({ fn: f.fn, args: { ...f.args }, locals: { ...f.locals }, line: f.line })),
+      ch: [...R.ch], chG: [...R.chG], msg, kind,
+    });
+    R.ch.clear(); R.chG.clear();
+  };
+  const mark = (arr, u) => R.ch.add(arr + u);
+
+  function tarjan(u) {
+    const f = { fn: 'tarjan', args: { u }, locals: {}, line: null };
+    R.frames.push(f);
+    snap('T0', `进入 tarjan(${u})`);
+    R.tim++; R.dfn[u] = R.low[u] = R.tim; mark('dfn', u); mark('low', u); R.chG.add('tim');
+    snap('T1', `tim 加 1 变成 ${R.tim}，dfn[${u}] = low[${u}] = ${R.tim}`);
+    R.stk.push(u); R.ins[u] = true; mark('ins', u); R.chG.add('stk');
+    snap('T2', `${u} 入栈，ins[${u}] = true。栈：[${R.stk.join(', ')}]`);
+    if (!g[u].length) snap('T3', `${u} 没有出边，循环直接结束`);
+    for (const { v, ei } of g[u]) {
+      f.locals.v = v; R.curE = ei; R.target = v;
+      snap('T3', `考察边 ${u} → ${v}`);
+      if (!R.dfn[v]) {
+        R.et[ei] = 'tree';
+        snap('T4', `dfn[${v}] = 0，${v} 还没访问：这是树边，递归进入 ${v}`);
+        f.line = 'T5';
+        tarjan(v);
+        R.curE = ei; R.target = v;
+        const old = R.low[u];
+        R.low[u] = Math.min(R.low[u], R.low[v]); mark('low', u);
+        snap('T6', `从 ${v} 回溯到 ${u}：low[${u}] = min(${old}, low[${v}] = ${R.low[v]}) = ${R.low[u]}`, 'ret');
+      } else if (R.ins[v]) {
+        R.et[ei] = 'back';
+        snap('T7', `${v} 已访问且仍在栈中：${v} 和 ${u} 在同一条还没结束的路径上，可用 dfn[${v}] 更新`);
+        const old = R.low[u];
+        R.low[u] = Math.min(R.low[u], R.dfn[v]); mark('low', u);
+        snap('T8', `low[${u}] = min(${old}, dfn[${v}] = ${R.dfn[v]}) = ${R.low[u]}`);
+      } else {
+        R.et[ei] = 'cross';
+        snap('T7', `${v} 已访问但不在栈中：它已经属于 SCC ${R.scc[v]}，横叉边不影响 low，忽略`);
+      }
+    }
+    R.curE = null; R.target = null; delete f.locals.v;
+    if (R.dfn[u] === R.low[u]) {
+      snap('T9', `dfn[${u}] = low[${u}] = ${R.dfn[u]}：${u} 是一个强连通分量的根，开始弹栈`);
+      R.cnt++; R.chG.add('cnt');
+      snap('T10', `cnt = ${R.cnt}`);
+      const members = [];
+      R.sccs.push({ id: R.cnt, members });
+      let x;
+      do {
+        x = R.stk.pop(); R.ins[x] = false; R.scc[x] = R.cnt; members.push(x);
+        f.locals.x = x; mark('ins', x); mark('scc', x); R.chG.add('stk');
+        snap(['T11', 'T12', 'T13'], `弹出 ${x}，ins[${x}] = false，scc[${x}] = ${R.cnt}`);
+        if (x !== u) snap('T14', `x = ${x} ≠ ${u}，继续弹`);
+      } while (x !== u);
+      snap('T14', `弹到 ${u} 自己为止：SCC ${R.cnt} = {${members.slice().sort((a, b) => a - b).join(', ')}}`, 'scc');
+    } else {
+      snap('T9', `dfn[${u}] = ${R.dfn[u]} ≠ low[${u}] = ${R.low[u]}：${u} 能回到更早的点，留在栈里，返回上一层`);
+    }
+    R.frames.pop();
+  }
+
+  const mf = { fn: 'main', args: {}, locals: {}, line: null };
+  R.frames.push(mf);
+  for (let i = 1; i <= n; i++) {
+    mf.locals.i = i;
+    if (R.dfn[i]) {
+      snap(['M0', 'M1'], `i = ${i}：dfn[${i}] = ${R.dfn[i]}，已经访问过，跳过`);
+    } else {
+      snap(['M0', 'M1'], `i = ${i}：dfn[${i}] = 0，从 ${i} 开始一次新的 DFS`);
+      mf.line = 'M1';
+      tarjan(i);
+    }
+  }
+  R.frames.pop();
+  snap(null, `结束：共找到 ${R.cnt} 个强连通分量`, 'end');
+  return R.steps;
+}
+
+function parseInput() {
+  const n = parseInt($('#nIn').value, 10);
+  if (!(n >= 1 && n <= 16)) throw '点数 n 需要在 1 ~ 16 之间';
+  const nums = ($('#edges').value.match(/-?\d+/g) || []).map(Number);
+  if (nums.length % 2) throw '边的端点个数是奇数，最后一条边缺少终点';
+  const edges = [];
+  for (let k = 0; k < nums.length; k += 2) {
+    const [u, v] = [nums[k], nums[k + 1]];
+    if (u < 1 || u > n || v < 1 || v > n) throw `边 ${u} → ${v} 的端点超出 1 ~ ${n}`;
+    edges.push([u, v]);
+  }
+  if (edges.length > 60) throw `最多 60 条边（现在 ${edges.length} 条）`;
+  return { n, edges };
+}
+
+function circleLayout(n) {
+  const cx = 300, cy = 180, rx = n <= 2 ? 105 : 190, ry = n <= 2 ? 95 : 135;
+  return Array.from({ length: n + 1 }, (_, i) => {
+    const t = -Math.PI / 2 + (2 * Math.PI * (i - 1)) / n;
+    return { x: cx + rx * Math.cos(t), y: cy + ry * Math.sin(t) };
+  });
+}
+
+function rebuild(keepPos, startAtZero = false) {
+  stop();
+  const err = $('#edgeErr');
+  let d;
+  try { d = parseInput(); err.hidden = true; }
+  catch (m) { err.textContent = m; err.hidden = false; return; }
+  if (!keepPos || d.n !== N) POS = circleLayout(d.n);
+  N = d.n; EDGES = d.edges;
+  STEPS = runTarjan(N, EDGES);
+  $('#slider').max = STEPS.length - 1;
+  pos = startAtZero ? 0 : STEPS.length - 1;
+  renderCode();
+  render();
+}
+
+function hlCode(t) {
+  return t.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/\b(void|int|for|if|else|do|while)\b/g, '<span class="kw">$1</span>')
+    .replace(/\b(tarjan|min)\b/g, '<span class="fnc">$1</span>');
+}
+
+function renderCode() {
+  let ln = 0;
+  $('#code').innerHTML = ['main', 'tarjan'].map(fn => `
+    <div class="fnblock"><div class="code">${CODE[fn].map(([k, t]) =>
+      `<div class="line"${k ? ` data-k="${k}"` : ''}><span class="ln">${++ln}</span>${hlCode(t)}</div>`).join('')}</div></div>`).join('');
+}
+
+const sccColor = id => `var(--c${((id - 1) % 8) + 1})`;
+
+function render() {
+  const st = STEPS[pos];
+  $('#slider').value = pos;
+  $('#counter').textContent = `${pos + 1} / ${STEPS.length}`;
+  const m = $('#msg'); m.textContent = st.msg; m.className = 'msg ' + st.kind;
+
+  document.querySelectorAll('#code .line').forEach(el => el.classList.remove('on', 'caller'));
+  st.frames.forEach((f, i) => {
+    const cls = i === st.frames.length - 1 ? 'on' : 'caller';
+    [].concat(f.line || []).forEach(k => {
+      const el = document.querySelector(`#code .line[data-k="${k}"]`);
+      if (el) el.classList.add(cls);
+    });
+  });
+
+  drawGraph(st);
+  drawArrays(st);
+  drawVars(st);
+}
+
+function drawGraph(st) {
+  const NR = 20;
+  const top = st.frames[st.frames.length - 1];
+  const curU = top && top.fn === 'tarjan' ? top.args.u : null;
+  const onPath = new Set(st.frames.filter(f => f.fn === 'tarjan').map(f => f.args.u));
+  const has = new Set(EDGES.map(([u, v]) => u + ',' + v));
+  let s = `<defs>${['def', 'tree', 'back', 'cross', 'cur'].map(k =>
+    `<marker id="ar-${k}" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-${k}" d="M0,0 L10,5 L0,10 z"/></marker>`).join('')}</defs>`;
+
+  EDGES.forEach(([u, v], ei) => {
+    const t = ei === st.curE ? 'cur' : (st.et[ei] || 'def');
+    const cls = `edge ${t === 'def' ? '' : t}`;
+    const A = POS[u], B = POS[v];
+    let d;
+    if (u === v) {
+      d = `M${A.x - 9},${A.y - NR + 2} C${A.x - 32},${A.y - 62} ${A.x + 32},${A.y - 62} ${A.x + 9},${A.y - NR + 2}`;
+    } else {
+      const dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy) || 1;
+      const bend = has.has(v + ',' + u) ? 24 : 0;
+      const nx = -dy / L, ny = dx / L;
+      const cx = (A.x + B.x) / 2 + nx * bend, cy = (A.y + B.y) / 2 + ny * bend;
+      const s1 = Math.hypot(cx - A.x, cy - A.y) || 1, s2 = Math.hypot(cx - B.x, cy - B.y) || 1;
+      const x1 = A.x + (cx - A.x) / s1 * NR, y1 = A.y + (cy - A.y) / s1 * NR;
+      const x2 = B.x + (cx - B.x) / s2 * (NR + 2), y2 = B.y + (cy - B.y) / s2 * (NR + 2);
+      d = `M${x1.toFixed(1)},${y1.toFixed(1)} Q${cx.toFixed(1)},${cy.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}`;
+    }
+    s += `<path class="${cls}" d="${d}" marker-end="url(#ar-${t})"><title>边 ${u} → ${v}</title></path>`;
+  });
+
+  for (let u = 1; u <= N; u++) {
+    const P = POS[u], c = ['vn'];
+    if (!st.dfn[u]) c.push('ghost');
+    if (st.ins[u]) c.push('stk');
+    if (u === curU) c.push('cur');
+    if (u === st.target) c.push('target');
+    if (st.ch.includes('dfn' + u) || st.ch.includes('low' + u)) c.push('changed');
+    const sc = st.scc[u];
+    const fill = sc && u !== curU
+      ? `<circle r="${NR}" style="fill:color-mix(in srgb, ${sccColor(sc)} 22%, var(--panel));stroke:${sccColor(sc)};stroke-width:2.5"/>`
+      : `<circle r="${NR}"/>`;
+    s += `<g class="${c.join(' ')}" data-u="${u}" transform="translate(${P.x.toFixed(1)},${P.y.toFixed(1)})">
+      <title>点 ${u}：dfn = ${st.dfn[u]}，low = ${st.low[u]}${sc ? `，属于 SCC ${sc}` : ''}${onPath.has(u) ? '，在递归路径上' : ''}</title>
+      <circle class="ring" r="${NR + 5}"/>
+      ${fill}
+      <text class="id" y="5">${u}</text>
+      <text class="dl" y="${NR + 13}">${st.dfn[u] ? `${st.dfn[u]}/${st.low[u]}` : '–'}</text>
+    </g>`;
+  }
+  $('#graph').innerHTML = s;
+}
+
+function drawArrays(st) {
+  const top = st.frames[st.frames.length - 1];
+  const curU = top && top.fn === 'tarjan' ? top.args.u : null;
+  const row = (name, key, fmt) => {
+    let h = '';
+    for (let u = 1; u <= N; u++) {
+      const v = st[key][u], c = ['cell'];
+      if (u === curU) c.push('cur');
+      else if (st.ch.includes(key + u)) c.push('changed');
+      if (!v) c.push('zero');
+      h += `<div class="${c.join(' ')}" data-u="${u}"><i>${u}</i><b>${fmt(v)}</b></div>`;
+    }
+    return `<div class="arow"><span class="aname">${name}</span><div class="cells">${h}</div></div>`;
+  };
+  const stk = st.stk.length
+    ? st.stk.map((u, i) => `<div class="cell${i === st.stk.length - 1 ? ' tos' : ''}${st.chG.includes('stk') && i === st.stk.length - 1 ? ' changed' : ''}" data-u="${u}"><i>${i === st.stk.length - 1 ? 'top' : i + 1}</i><b>${u}</b></div>`).join('')
+    : '<span class="stkempty">空</span>';
+  const sccs = st.sccs.map(s => `<span class="scc" style="border-color:${sccColor(s.id)};color:${sccColor(s.id)}">SCC ${s.id}：{${s.members.slice().sort((a, b) => a - b).join(', ')}}</span>`).join('');
+  $('#arrays').innerHTML =
+    row('dfn', 'dfn', v => v || 0) +
+    row('low', 'low', v => v || 0) +
+    row('ins', 'ins', v => (v ? 'T' : 'F')) +
+    row('scc', 'scc', v => v || 0) +
+    `<div class="arow"><span class="aname">stk</span><div class="cells">${stk}</div></div>` +
+    (sccs ? `<div class="sccs">${sccs}</div>` : '');
+}
+
+function drawVars(st) {
+  const kv = (k, v, key) => `<span class="kv${st.chG.includes(key) ? ' chg' : ''}"><span>${k} =</span> ${v}</span>`;
+  const g = [kv('n', N, ''), kv('m', EDGES.length, ''), kv('tim', st.tim, 'tim'), kv('cnt', st.cnt, 'cnt'), kv('top', st.stk.length, 'stk')];
+  const frames = st.frames.slice().reverse();
+  const fr = frames.length ? frames.map((f, i) => `
+    <div class="frame${i === 0 ? ' top' : ''}">
+      <span class="depth">深度 ${frames.length - 1 - i}</span>
+      <div class="sig"><span class="fnc">${f.fn}</span>(${Object.entries(f.args).map(([k, v]) => `<span class="an">${k}=</span>${v}`).join(', ')})</div>
+      <div class="locals">${Object.entries(f.locals).map(([k, v]) => `<span class="kv"><span>${k} =</span> ${v}</span>`).join('')}</div>
+    </div>`).join('') : `<div class="empty">${pos === 0 ? '还没开始调用' : '调用栈已清空，算法结束'}</div>`;
+  $('#vars').innerHTML = `<div class="globals">${g.join('')}</div><div class="stack">${fr}</div>`;
+}
+
+// ==================== 3. 播放控制与微课联动 ====================
+function stop() { clearInterval(timer); timer = null; $('#playBtn').textContent = '▶ 播放'; }
+function play() {
+  if (pos >= STEPS.length - 1) { pos = 0; render(); }
+  stop();
+  $('#playBtn').textContent = '⏸ 暂停';
+  timer = setInterval(() => {
+    if (pos >= STEPS.length - 1) { stop(); return; }
+    pos++; render();
+  }, 850 / parseFloat($('#speed').value));
+}
+const go = p => { stop(); pos = Math.max(0, Math.min(STEPS.length - 1, p)); render(); };
+
+$('#playBtn').onclick = () => (timer ? stop() : play());
+$('#prevBtn').onclick = () => go(pos - 1);
+$('#nextBtn').onclick = () => go(pos + 1);
+$('#firstBtn').onclick = () => go(0);
+$('#lastBtn').onclick = () => go(Infinity);
+$('#slider').oninput = e => go(+e.target.value);
+$('#speed').onchange = () => { if (timer) play(); };
+
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input:not([type=range]), select, textarea')) return;
+  if (e.key === 'ArrowLeft') { e.preventDefault(); go(pos - 1); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); go(pos + 1); }
+  else if (e.key === ' ') { e.preventDefault(); timer ? stop() : play(); }
+});
+
+let deb = null;
+const onEdit = () => { clearTimeout(deb); deb = setTimeout(() => rebuild(true, false), 250); };
+$('#nIn').addEventListener('input', onEdit);
+$('#edges').addEventListener('input', onEdit);
+
+const PRESET = '1 2\n2 3\n3 1\n3 7\n7 8\n8 7\n2 4\n4 5\n5 6\n6 4\n6 7';
+$('#presetBtn').onclick = () => { $('#nIn').value = 8; $('#edges').value = PRESET; rebuild(false, false); };
+$('#randBtn').onclick = () => {
+  const n = 6 + Math.floor(Math.random() * 5), m = n + 2 + Math.floor(Math.random() * n), set = new Set(), out = [];
+  while (out.length < m) {
+    const u = 1 + Math.floor(Math.random() * n), v = 1 + Math.floor(Math.random() * n);
+    if (u === v || set.has(u + ',' + v)) continue;
+    set.add(u + ',' + v); out.push(`${u} ${v}`);
+  }
+  $('#nIn').value = n; $('#edges').value = out.join('\n');
+  rebuild(false, true);
+};
+$('#relayoutBtn').onclick = () => { POS = circleLayout(N); render(); };
+
+function loadGraphPreset(n, edgesStr, autoPlay = true) {
+  $('#nIn').value = n;
+  $('#edges').value = edgesStr;
+  rebuild(false, autoPlay);
+  if (autoPlay) play();
+}
+
+function lessonDemo(kind) {
+  if (kind === 'presetPlay') {
+    loadGraphPreset(8, PRESET, true);
+  } else if (kind === 'presetEnd') {
+    loadGraphPreset(8, PRESET, false);
+  } else if (kind === 'crossEdge') {
+    loadGraphPreset(4, '1 3\n3 4\n4 3\n1 2\n2 3', true);
+    showToast('已加载横叉边样例：注意看 2 → 3 如何被忽略');
+  } else if (kind === 'nestedCycle') {
+    loadGraphPreset(5, '1 2\n2 3\n3 1\n2 4\n4 1\n4 5', true);
+    showToast('已加载嵌套双环：观察 low 值如何向上传递');
+  } else if (kind === 'disconnected') {
+    loadGraphPreset(6, '1 2\n2 3\n3 1\n4 5\n5 6\n6 4', true);
+    showToast('已加载不连通图：观察 main 循环开启两次 DFS');
+  } else if (kind === 'appDep') {
+    loadGraphPreset(7, '1 2\n2 3\n3 1\n3 4\n4 5\n5 6\n6 5\n4 7', true);
+    showToast('已加载软件依赖图：{1,2,3} 与 {5,6} 为循环依赖');
+  } else if (kind === 'appRoad') {
+    loadGraphPreset(6, '1 2\n2 1\n2 3\n3 4\n4 3\n5 6', true);
+    showToast('已加载单向路网：缩点后统计入度0与出度0分量数');
+  }
+}
+
+/* 拖动点 */
+const svg = $('#graph');
+let drag = null;
+const toSvg = e => { const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); };
+svg.addEventListener('pointerdown', e => {
+  const g = e.target.closest('.vn'); if (!g) return;
+  drag = +g.dataset.u; svg.setPointerCapture(e.pointerId);
+});
+svg.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const p = toSvg(e);
+  POS[drag] = { x: Math.max(24, Math.min(576, p.x)), y: Math.max(24, Math.min(336, p.y)) };
+  drawGraph(STEPS[pos]);
+});
+const endDrag = () => { drag = null; };
+svg.addEventListener('pointerup', endDrag);
+svg.addEventListener('pointercancel', endDrag);
+
+/* hover：图中点与数组单元格联动 */
+document.addEventListener('mouseover', e => {
+  if (drag) return;
+  document.querySelectorAll('.hover').forEach(el => el.classList.remove('hover'));
+  const t = e.target.closest('[data-u]');
+  if (t) document.querySelectorAll(`[data-u="${t.dataset.u}"]`).forEach(el => el.classList.add('hover'));
+});
+
+rebuild(false, false);
+</script>
+</body>
+</html>
