@@ -16,10 +16,13 @@
 algo-visual-lessons/
 ├── index.html               # 课程目录主页（支持分类筛选与关键词搜索）
 ├── lessons.js               # 课程配置清单（数据驱动目录渲染）
+├── AGENTS.md                # 交互式微课制作规范与新增挂载流程（供后续新对话复用）
 └── lessons/
     └── bst-avl/
         └── index.html       # 搜索树与平衡树交互微课
 ```
+
+> 完整的交互式微课设计模式、技术规范与发布步骤请见 [`AGENTS.md`](./AGENTS.md)。
 
 ## 如何新增一节演示教学
 
