@@ -18,18 +18,66 @@ window.ALGO_LESSONS = [
   },
   {
     id: "segment-tree",
-    title: "线段树与懒标记（Segment Tree）",
-    subtitle: "5 节互动微课 · 区间修改/查询动画 · Lazy Tag 下传 · 实战题解",
+    title: "从零掌握线段树与懒标记（Segment Tree）",
+    subtitle: "6 节互动微课 · 实时树形动画 · Lazy Tag 下传 · 应用与题解",
     category: "数据结构",
     level: "零基础友好",
-    tags: ["线段树", "Lazy Tag", "pushDown", "区间和", "P3372", "P3373"],
+    tags: ["线段树", "Lazy Tag", "pushDown", "区间修改", "LC307", "P3372", "P3373"],
     path: "./lessons/segment-tree/index.html",
+    updatedAt: "2026-11-21",
+    status: "published",
+    highlights: [
+      "SVG 树形节点、tr/lz 数组、C++ 伪代码与递归调用栈四联同步追踪",
+      "用“先欠账、用到再下传”直观演示 Lazy Tag 下传与区间 O(log n) 拆分",
+      "含游戏榜单/K线极值/扫描线 4 大实际应用与 LC307/P3372/P3373 题解"
+    ]
+  },
+  {
+    id: "monotonic-stack",
+    title: "从零掌握单调栈与单调队列",
+    subtitle: "6 节互动微课 · 柱状图实时动画 · 滑动窗口极值 · 实战题解",
+    category: "数据结构",
+    level: "零基础友好",
+    tags: ["单调栈", "单调队列", "滑动窗口", "最大矩形", "P5788", "P1886", "LC84"],
+    path: "./lessons/monotonic-stack/index.html",
+    updatedAt: "2026-11-21",
+    status: "published",
+    highlights: [
+      "双模式 SVG 柱状图画布：实时演示下一个更大元素与滑动窗口最大值",
+      "可视化统计总入栈/出栈次数，直观验证每个元素最多进出各一次的 O(n) 势能",
+      "含股票跨度/实时峰值监控/DP 优化 4 大应用与 P5788/LC239/LC84 题解"
+    ]
+  },
+  {
+    id: "a-star",
+    title: "从零掌握 A* 启发式寻路算法",
+    subtitle: "6 节互动微课 · 网格实时寻路台 · 5 算法对比 · 应用与题解",
+    category: "搜索与图论",
+    level: "零基础友好",
+    tags: ["A*", "启发式搜索", "曼哈顿距离", "Dijkstra", "八数码", "P1379", "P2483"],
+    path: "./lessons/a-star/index.html",
+    updatedAt: "2026-11-21",
+    status: "published",
+    highlights: [
+      "可绘制障碍与泥潭的 9×13 交互网格，同图对比 A*/Dijkstra/贪心/Weighted A*",
+      "实时显示每格 f=g+h 估价、Open 优先队列与高估启发式导致次优的反例陷阱",
+      "含游戏 NavMesh/自动驾驶/地图导航/八数码 4 大应用与 3 道 C++ 实战题解"
+    ]
+  },
+  {
+    id: "tarjan-scc",
+    title: "从零掌握 Tarjan 强连通分量与缩点",
+    subtitle: "6 节互动微课 · 实时 DFS 栈动画 · 实际应用案例 · 三道实战题解",
+    category: "图论",
+    level: "零基础友好",
+    tags: ["Tarjan", "强连通分量", "SCC", "缩点", "DAG", "B3609", "P3387", "P2341"],
+    path: "./lessons/tarjan-scc/index.html",
     updatedAt: "2026-11-19",
     status: "published",
     highlights: [
-      "用“先欠账、用到再下传”通俗类比讲透懒标记 pushDown",
-      "实时 SVG 树画布 + 橙色懒标记徽章 + 原数组逻辑值对照",
-      "附洛谷 P3372 / P3373 完整 C++17 模板与乘加优先级解析"
+      "左右双栏联动：图、dfn/low/stk 数组、C++ 伪代码与调用栈同步追踪",
+      "图解四种 DFS 边与横叉边陷阱，支持拖动节点与自定义任意有向图",
+      "含软件依赖检测/2-SAT/单向路网 4 大实际应用案例与 3 道洛谷 C++ 题解"
     ]
   },
   {
@@ -62,6 +110,22 @@ window.ALGO_LESSONS = [
       "支持正权图与负权边反例切换，亲眼看 Dijkstra 如何被负权边坑惨",
       "实时展示 dist[] 数组、小根堆过期状态跳过与最短路径树",
       "附洛谷 P4779 堆优化模板与 P3385 SPFA 判负环题解"
+    ]
+  },
+  {
+    id: "dp-knapsack",
+    title: "从零掌握背包动态规划（0-1 与完全背包）",
+    subtitle: "6 节互动微课 · 状态转移表动画 · 滚动数组正倒序 · 实战题解",
+    category: "动态规划",
+    level: "零基础友好",
+    tags: ["动态规划", "0-1 背包", "完全背包", "滚动数组", "P1048", "P1616", "LC416"],
+    path: "./lessons/dp-knapsack/index.html",
+    updatedAt: "2026-11-21",
+    status: "published",
+    highlights: [
+      "实时高亮二维 DP 转移来源格与一维滚动数组扫描方向（倒序 vs 正序）",
+      "一键对比贪心反例与最优方案回溯，彻底搞懂为何 0-1 背包必须倒序",
+      "含云主机装箱/预算分配/物流配载 4 大应用与 P1048/P1616/LC416 题解"
     ]
   },
   {

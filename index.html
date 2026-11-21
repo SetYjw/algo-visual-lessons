@@ -236,7 +236,7 @@ footer {
 
   <section class="toolbar">
     <div class="cat-tabs" id="catTabs"></div>
-    <input class="search-box" id="searchInput" type="search" placeholder="搜索算法、标签、题号 (如 AVL / Tarjan / P3387)...">
+    <input class="search-box" id="searchInput" type="search" placeholder="搜索算法、标签、题号 (如 A* / AVL / 线段树 / P3372)...">
   </section>
 
   <section class="grid" id="lessonGrid"></section>
@@ -246,7 +246,7 @@ footer {
   维护者：SetYjw · 新增演示只需将页面放入 <code>lessons/&lt;slug&gt;/index.html</code> 并在 <code>lessons.js</code> 中注册
 </footer>
 
-<script src="./lessons.js?v=20261119-2"></script>
+<script src="./lessons.js?v=20261121-1"></script>
 <script>
 document.getElementById('themeToggle').addEventListener('click', () => {
   const cur = document.documentElement.getAttribute('data-theme');
@@ -303,7 +303,7 @@ function renderGrid() {
     <article class="card placeholder">
       <div style="font-size:26px; margin-bottom:4px;">＋</div>
       <div style="font-weight:600; color:var(--ink);">更多算法微课持续扩充中</div>
-      <div style="font-size:12.5px; max-width:260px;">线段树、最短路、动态规划、字符串匹配等演示教学可随时挂载到此目录</div>
+      <div style="font-size:12.5px; max-width:260px;">动态规划、字符串匹配（KMP/AC自动机）、网络流、树链剖分等演示教学可随时挂载到此目录</div>
     </article>
   ` : '';
 

@@ -1,0 +1,2058 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>从零掌握 A* 启发式寻路算法 — 交互式微课 · 实时动画 · 应用与实战</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root {
+  --bg: #EEF1F6;
+  --panel: #FFFFFF;
+  --sunk: #F5F7FA;
+  --ink: #18202E;
+  --muted: #5C6779;
+  --line: #D9DFE8;
+  --line-strong: #A9B3C3;
+  --accent: #2B57E0;
+  --accent-soft: #E1E8FC;
+  --on-accent: #FFFFFF;
+  --ok: #17905F;
+  --ok-soft: #DAF1E6;
+  --warn: #B8700C;
+  --warn-soft: #FBEBD2;
+  --err: #C93535;
+  --err-soft: #FCE4E4;
+  --purple: #7A42D9;
+  --purple-soft: #EFE6FD;
+  --skip: #96A0B2;
+  --kw: #8A3FC0;
+  --fn: #1D6FB0;
+  --cm: #7A8699;
+  --num: #C05621;
+  --wall: #2B3445;
+  --wall-border: #1B2230;
+  --swamp: #F3DFB8;
+  --swamp-border: #D4A959;
+  --swamp-ink: #7A5210;
+  --open-bg: #DCE6FD;
+  --open-border: #8AA7F5;
+  --closed-bg: #EDE4FC;
+  --closed-border: #C3A6F5;
+  --path-bg: #C7F0DC;
+  --path-border: #17905F;
+  --shadow: 0 2px 12px rgba(24, 32, 46, 0.06);
+  --font-ui: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-display: "Space Grotesk", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1219; --panel: #161C26; --sunk: #11161F; --ink: #E5EAF2; --muted: #93A0B4;
+    --line: #273041; --line-strong: #435069; --accent: #7C9BFF; --accent-soft: #1D2847; --on-accent: #0A1020;
+    --ok: #3FC58F; --ok-soft: #123326; --warn: #F0A53A; --warn-soft: #382810;
+    --err: #FF7676; --err-soft: #3A1A1E; --purple: #B894FF; --purple-soft: #281D42;
+    --skip: #5C667A; --kw: #C99BF5; --fn: #7DB8F0; --cm: #6E7B91; --num: #F6AD55;
+    --wall: #384459; --wall-border: #4D5D78;
+    --swamp: #3B2D16; --swamp-border: #7A5C28; --swamp-ink: #F2BE63;
+    --open-bg: #1B284A; --open-border: #496BC4;
+    --closed-bg: #271E40; --closed-border: #6D52A8;
+    --path-bg: #143D2D; --path-border: #3FC58F;
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0E1219; --panel: #161C26; --sunk: #11161F; --ink: #E5EAF2; --muted: #93A0B4;
+  --line: #273041; --line-strong: #435069; --accent: #7C9BFF; --accent-soft: #1D2847; --on-accent: #0A1020;
+  --ok: #3FC58F; --ok-soft: #123326; --warn: #F0A53A; --warn-soft: #382810;
+  --err: #FF7676; --err-soft: #3A1A1E; --purple: #B894FF; --purple-soft: #281D42;
+  --skip: #5C667A; --kw: #C99BF5; --fn: #7DB8F0; --cm: #6E7B91; --num: #F6AD55;
+  --wall: #384459; --wall-border: #4D5D78;
+  --swamp: #3B2D16; --swamp-border: #7A5C28; --swamp-ink: #F2BE63;
+  --open-bg: #1B284A; --open-border: #496BC4;
+  --closed-bg: #271E40; --closed-border: #6D52A8;
+  --path-bg: #143D2D; --path-border: #3FC58F;
+  --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14.5px;
+  line-height: 1.72;
+}
+
+/* ==================== Topbar ==================== */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 11px; }
+.brand-badge {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  color: #fff; display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 14px; flex: none;
+}
+.brand h1 { font-family: var(--font-display); font-size: 17px; margin: 0; line-height: 1.2; }
+.brand p { margin: 0; font-size: 11.5px; color: var(--muted); }
+
+.course-pills {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.lesson-pill {
+  border: 1px solid var(--line);
+  background: var(--sunk);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .15s;
+}
+.lesson-pill:hover { border-color: var(--accent); color: var(--ink); }
+.lesson-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.lesson-pill.done:not(.active) {
+  border-color: var(--ok);
+  color: var(--ok);
+  background: var(--ok-soft);
+}
+.top-right { display: flex; align-items: center; gap: 10px; }
+.progress-pill {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 7px;
+}
+.theme-btn {
+  background: var(--sunk); border: 1px solid var(--line-strong);
+  border-radius: 7px; padding: 5px 10px; font-size: 12.5px;
+  cursor: pointer; color: var(--ink); font-family: inherit;
+}
+.theme-btn:hover { border-color: var(--accent); }
+
+/* ==================== Main Split Classroom Layout ==================== */
+.classroom {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 18px 20px 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 1160px) {
+  .classroom { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+/* ==================== LEFT: Interactive Micro-Lesson ==================== */
+.lesson-pane { display: none; animation: fadeIn .22s ease; }
+.lesson-pane.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.lesson-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  display: inline-block;
+}
+.badge.blue { background: var(--accent-soft); color: var(--accent); }
+.badge.green { background: var(--ok-soft); color: var(--ok); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.badge.purple { background: var(--purple-soft); color: var(--purple); }
+.badge.red { background: var(--err-soft); color: var(--err); }
+
+.lesson-title {
+  font-family: var(--font-display);
+  font-size: 23px;
+  line-height: 1.3;
+  margin: 0 0 12px;
+}
+.lesson-lead {
+  color: var(--muted);
+  font-size: 14.5px;
+  margin: 0 0 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lesson-body h3 {
+  font-family: var(--font-display);
+  font-size: 16.5px;
+  margin: 20px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lesson-body p { margin: 0 0 10px; }
+.lesson-body ul, .lesson-body ol { margin: 0 0 12px; padding-left: 20px; }
+.lesson-body li { margin-bottom: 6px; }
+
+.math { font-family: "Times New Roman", Georgia, serif; font-style: italic; font-size: 1.06em; }
+.code-inline {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.formula-box {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 14px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  margin: 12px 0;
+}
+
+.callout {
+  padding: 11px 14px;
+  border-radius: 9px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  margin: 12px 0;
+  font-size: 13.8px;
+}
+.callout.warn { border-left-color: var(--warn); background: color-mix(in srgb, var(--warn-soft) 45%, var(--sunk)); }
+.callout.ok { border-left-color: var(--ok); background: color-mix(in srgb, var(--ok-soft) 45%, var(--sunk)); }
+.callout.err { border-left-color: var(--err); background: color-mix(in srgb, var(--err-soft) 45%, var(--sunk)); }
+
+/* Action Card inside Lesson to drive Right Workbench */
+.try-card {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--panel));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.try-card .try-info { flex: 1 1 220px; }
+.try-card .try-title { font-weight: 700; font-size: 13.5px; color: var(--accent); margin-bottom: 2px; }
+.try-card .try-desc { font-size: 12.8px; color: var(--muted); }
+.try-btns { display: flex; gap: 7px; flex-wrap: wrap; }
+
+/* Inline SVG Diagrams inside Lesson */
+.diagram-box {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 12px 0;
+  text-align: center;
+}
+.diagram-box svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+.diagram-cap { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+/* Case Grid for Real-world Applications */
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+@media (max-width: 640px) { .case-grid { grid-template-columns: 1fr; } }
+.case-card {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.case-card h4 {
+  margin: 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.case-card p { margin: 0; font-size: 12.8px; color: var(--muted); }
+.case-card .case-model {
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+/* Quiz Box */
+.quiz-box {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+}
+.quiz-head {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--purple);
+  margin-bottom: 6px;
+}
+.quiz-q { font-weight: 600; font-size: 14px; margin-bottom: 10px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 7px; }
+.quiz-opt {
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.quiz-opt:hover { border-color: var(--accent); }
+.quiz-opt.correct { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); font-weight: 600; }
+.quiz-opt.wrong { background: var(--err-soft); border-color: var(--err); color: var(--err); }
+.quiz-fb {
+  margin-top: 10px;
+  font-size: 13px;
+  padding: 8px 11px;
+  border-radius: 7px;
+  display: none;
+}
+.quiz-fb.show { display: block; }
+.quiz-fb.ok { background: var(--ok-soft); color: var(--ok); }
+.quiz-fb.err { background: var(--err-soft); color: var(--err); }
+
+/* Lesson Footer Nav */
+.lesson-footer {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Comparison Table */
+.table-wrap { overflow-x: auto; margin: 10px 0; }
+table.cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.cmp-table th, table.cmp-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+table.cmp-table th { background: var(--sunk); font-size: 11.5px; color: var(--muted); font-weight: 700; }
+
+/* Problem Tabs inside Lesson 6 */
+.prob-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+.prob-tab {
+  padding: 6px 12px; border-radius: 7px; border: 1px solid var(--line-strong);
+  background: var(--sunk); color: var(--muted); font-weight: 600; font-size: 12.8px; cursor: pointer;
+}
+.prob-tab.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.prob-pane { display: none; }
+.prob-pane.on { display: block; }
+.code-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  padding: 7px 12px; background: var(--sunk);
+  border: 1px solid var(--line); border-bottom: none;
+  border-radius: 8px 8px 0 0; font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+}
+pre.cpp-code {
+  margin: 0 0 12px; padding: 11px 13px; background: var(--sunk);
+  border: 1px solid var(--line); border-radius: 0 0 8px 8px;
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.56;
+  overflow-x: auto; max-height: 410px;
+}
+.kw { color: var(--kw); font-weight: 500; }
+.fnc { color: var(--fn); }
+.cm { color: var(--cm); font-style: italic; }
+.num { color: var(--num); }
+
+/* ==================== RIGHT: Sticky Interactive Workbench ==================== */
+.workbench-sticky {
+  position: sticky;
+  top: 70px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (max-width: 1160px) {
+  .workbench-sticky { position: static; }
+}
+
+.btn {
+  font-family: var(--font-ui); font-size: 12.5px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 7px; padding: 6px 11px;
+  cursor: pointer; white-space: nowrap; transition: all .15s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); color: var(--on-accent); }
+.btn.sm { padding: 4px 9px; font-size: 12px; }
+.btn.active-chip {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.btn:disabled { opacity: 0.42; cursor: not-allowed; }
+
+input, select {
+  font-family: var(--font-mono); font-size: 12.5px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 7px; padding: 5px 8px; outline: none;
+}
+input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+.ctrl-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ctrl-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  min-width: 44px;
+}
+
+/* Live Metrics Bar */
+.metrics-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+@media (max-width: 640px) {
+  .metrics-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.metric-card {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 9px;
+}
+.metric-card .m-label {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-weight: 600;
+  line-height: 1.2;
+}
+.metric-card .m-val {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 2px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.metric-card.ok .m-val { color: var(--ok); }
+.metric-card.err .m-val { color: var(--err); }
+.metric-card.warn .m-val { color: var(--warn); }
+
+/* Grid Canvas */
+.graph-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0 6px;
+}
+.graph-head-title { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.04em; }
+.legend { display: flex; gap: 8px; flex-wrap: wrap; }
+.legend span { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid; }
+.lg-start { background: var(--ok); border-color: var(--ok); }
+.lg-goal { background: var(--err); border-color: var(--err); }
+.lg-wall { background: var(--wall); border-color: var(--wall-border); }
+.lg-swamp { background: var(--swamp); border-color: var(--swamp-border); }
+.lg-open { background: var(--open-bg); border-color: var(--open-border); }
+.lg-closed { background: var(--closed-bg); border-color: var(--closed-border); }
+.lg-cur { background: var(--accent); border-color: var(--accent); }
+.lg-path { background: var(--path-bg); border-color: var(--path-border); }
+
+.grid-wrap {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px;
+  user-select: none;
+  touch-action: none;
+}
+.grid-board {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  gap: 3px;
+}
+.gcell {
+  aspect-ratio: 1 / 1;
+  border-radius: 5px;
+  border: 1.5px solid var(--line);
+  background: var(--panel);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  transition: background .14s, border-color .14s, transform .12s;
+  overflow: hidden;
+  line-height: 1.05;
+}
+.gcell:hover { border-color: var(--accent); z-index: 2; }
+.gcell.wall {
+  background: var(--wall);
+  border-color: var(--wall-border);
+}
+.gcell.swamp {
+  background: var(--swamp);
+  border-color: var(--swamp-border);
+  color: var(--swamp-ink);
+}
+.gcell.open {
+  background: var(--open-bg);
+  border-color: var(--open-border);
+}
+.gcell.closed {
+  background: var(--closed-bg);
+  border-color: var(--closed-border);
+}
+.gcell.swamp.open {
+  background: color-mix(in srgb, var(--open-bg) 62%, var(--swamp));
+  border-color: var(--open-border);
+}
+.gcell.swamp.closed {
+  background: color-mix(in srgb, var(--closed-bg) 60%, var(--swamp));
+  border-color: var(--closed-border);
+}
+.gcell.relaxed {
+  box-shadow: inset 0 0 0 2px var(--warn);
+}
+.gcell.cur {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--on-accent) !important;
+  transform: scale(1.06);
+  z-index: 4;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.gcell.path {
+  background: var(--path-bg) !important;
+  border-color: var(--path-border) !important;
+  border-width: 2px;
+}
+.gcell.start {
+  background: var(--ok) !important;
+  border-color: var(--ok) !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+.gcell.goal {
+  background: var(--err) !important;
+  border-color: var(--err) !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+.gcell .c-tag {
+  font-size: 13px;
+  font-weight: 700;
+}
+.gcell .c-f {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.gcell.cur .c-f, .gcell.cur .c-sub { color: var(--on-accent); }
+.gcell.path .c-f { color: var(--ok); }
+.gcell .c-sub {
+  font-size: 8px;
+  color: var(--muted);
+  letter-spacing: -0.03em;
+  margin-top: 1px;
+  display: none;
+}
+.grid-board.show-detail .gcell .c-f { font-size: 10px; }
+.grid-board.show-detail .gcell .c-sub { display: block; }
+.gcell .c-swamp-mark {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--swamp-ink);
+  opacity: 0.85;
+}
+.gcell.cur .c-swamp-mark { color: var(--on-accent); }
+
+.hover-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.toggle-chk {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+/* Step Message & Playback */
+.step-box {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 12px;
+  margin-top: 10px;
+}
+.msg { font-size: 13.2px; line-height: 1.5; min-height: 20px; }
+.msg.ok { color: var(--ok); font-weight: 600; }
+.msg.warn { color: var(--warn); font-weight: 600; }
+.msg.err { color: var(--err); font-weight: 600; }
+
+.tl-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.tl-row button { padding: 4px 9px; font-family: var(--font-mono); font-size: 12px; }
+#slider { flex: 1 1 130px; accent-color: var(--accent); padding: 0; border: none; background: none; box-shadow: none; }
+.counter { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); font-size: 11.5px; min-width: 60px; text-align: right; }
+
+/* Bottom Debugger Tabs */
+.dbg-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 8px; }
+.dbg-tab {
+  border: 1px solid var(--line); background: var(--sunk); color: var(--muted);
+  border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.dbg-tab.on { background: var(--accent-soft); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.dbg-pane { display: none; }
+.dbg-pane.on { display: block; }
+
+.code {
+  background: var(--sunk); border: 1px solid var(--line); border-radius: 8px;
+  padding: 4px 0; font-family: var(--font-mono); font-size: 11.6px; line-height: 1.52; overflow-x: auto;
+}
+.line { display: flex; white-space: pre; padding-right: 10px; border-left: 3px solid transparent; }
+.line .ln { width: 26px; flex: none; text-align: right; padding-right: 8px; color: var(--skip); user-select: none; }
+.line.on { background: var(--accent-soft); border-left-color: var(--accent); font-weight: 500; }
+.line.on .ln { color: var(--accent); }
+
+/* Open Priority Queue List */
+.pq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 225px;
+  overflow-y: auto;
+}
+.pq-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--sunk);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.pq-item.top {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+.pq-item .pq-coord { font-weight: 700; color: var(--ink); }
+.pq-item .pq-vals { display: flex; gap: 10px; color: var(--muted); }
+.pq-item .pq-f { color: var(--accent); font-weight: 700; }
+.empty { color: var(--muted); font-size: 12.5px; padding: 6px 0; }
+
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: var(--panel); padding: 7px 16px; border-radius: 999px;
+  font-size: 13px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 90;
+}
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-badge">A*</div>
+      <div>
+        <h1>A* 启发式寻路算法</h1>
+        <p>边学边演的交互式微课 · 从盲目搜索到启发式寻路</p>
+      </div>
+    </div>
+
+    <div class="course-pills" id="courseNav">
+      <button class="lesson-pill active" onclick="goLesson(0)">1. 盲搜的痛点</button>
+      <button class="lesson-pill" onclick="goLesson(1)">2. 估价 f=g+h</button>
+      <button class="lesson-pill" onclick="goLesson(2)">3. 可采纳性证明</button>
+      <button class="lesson-pill" onclick="goLesson(3)">4. 算法横向对比</button>
+      <button class="lesson-pill" onclick="goLesson(4)">5. 实际应用案例</button>
+      <button class="lesson-pill" onclick="goLesson(5)">6. 实战题解</button>
+    </div>
+
+    <div class="top-right">
+      <a class="theme-btn" href="../../index.html" style="text-decoration:none;">← 目录</a>
+      <span class="progress-pill" id="progressText">进度 1/6</span>
+      <button class="theme-btn" id="themeToggle" title="切换浅色/深色主题">🌓 主题</button>
+    </div>
+  </div>
+</header>
+
+<main class="classroom">
+
+  <!-- ==================== 左栏：沉浸式交互微课 ==================== -->
+  <section class="panel" id="lessonContainer">
+
+    <!-- ===== 第 1 课：盲搜的痛点 ===== -->
+    <article class="lesson-pane active" id="lesson-0">
+      <div class="lesson-eyebrow"><span class="badge blue">第 1 课 · 动机与直觉</span> <span>约 3 分钟</span></div>
+      <h2 class="lesson-title">为什么 Dijkstra / BFS 寻路像“无头苍蝇”？</h2>
+      <p class="lesson-lead">假设你在北京，要开车去上海（东南方向）。你会先往西北方向的乌鲁木齐开 1000 公里看看路通不通吗？<strong>Dijkstra 就会！</strong></p>
+
+      <div class="lesson-body">
+        <h3>1. 盲目搜索的代价：水波纹式扩散</h3>
+        <p>无论是无权图的 <strong>BFS</strong>，还是带权图的 <strong>Dijkstra</strong>，它们都只关心“从起点 <span class="math">S</span> 已经走了多远”，而对“终点 <span class="math">T</span> 在哪个方向”一无所知。</p>
+        <ul>
+          <li>结果就是：算法以起点为圆心，像<strong>往池塘里扔石头激起的水波纹</strong>一样，向四面八方均匀扩张。</li>
+          <li>在 <span class="math">1000 &times; 1000</span> 的游戏大地图里，即使终点就在正前方，Dijkstra 也会把起点背后、上下左右几十万个明显背道而驰的格子全部搜索一遍！</li>
+        </ul>
+
+        <h3>2. A* 的直觉：给搜索装上“指南针”</h3>
+        <p><strong>A*（A-Star）算法</strong>的核心思想非常朴素：在决定下一步先探索哪个格子时，不仅看<strong>已经走了多远</strong>，还要结合“指南针”估算<strong>离终点大概还有多远</strong>，优先朝靠近终点的方向探索！</p>
+
+        <div class="diagram-box">
+          <svg viewBox="0 0 540 165" width="520" height="160">
+            <!-- Left: Dijkstra Water Ripple -->
+            <rect x="8" y="10" width="248" height="145" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+            <text x="132" y="28" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--muted)">Dijkstra / BFS（四面八方水波纹）</text>
+            <circle cx="88" cy="94" r="52" fill="color-mix(in srgb, var(--purple) 14%, transparent)" stroke="var(--purple)" stroke-dasharray="4 3"/>
+            <circle cx="88" cy="94" r="36" fill="color-mix(in srgb, var(--purple) 18%, transparent)" stroke="var(--purple)" stroke-opacity="0.7"/>
+            <circle cx="88" cy="94" r="20" fill="color-mix(in srgb, var(--purple) 24%, transparent)" stroke="var(--purple)"/>
+            <!-- wall -->
+            <rect x="138" y="64" width="12" height="58" rx="3" fill="var(--wall)"/>
+            <!-- S & T -->
+            <circle cx="88" cy="94" r="9" fill="var(--ok)"/><text x="88" y="98" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">S</text>
+            <circle cx="212" cy="94" r="9" fill="var(--err)"/><text x="212" y="98" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">T</text>
+            <text x="52" y="60" font-size="10" fill="var(--err)">大量浪费在反方向</text>
+
+            <!-- Right: A* Guided Beam -->
+            <rect x="284" y="10" width="248" height="145" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+            <text x="408" y="28" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--accent)">A* 算法（指南针定向光束）</text>
+            <path d="M352,94 Q405,46 492,94 Q405,112 352,94 Z" fill="color-mix(in srgb, var(--accent) 18%, transparent)" stroke="var(--accent)" stroke-dasharray="4 3"/>
+            <path d="M364,94 L408,56 L478,94" fill="none" stroke="var(--ok)" stroke-width="2.6"/>
+            <!-- wall -->
+            <rect x="414" y="64" width="12" height="58" rx="3" fill="var(--wall)"/>
+            <!-- S & T -->
+            <circle cx="364" cy="94" r="9" fill="var(--ok)"/><text x="364" y="98" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">S</text>
+            <circle cx="488" cy="94" r="9" fill="var(--err)"/><text x="488" y="98" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">T</text>
+            <text x="424" y="138" text-anchor="middle" font-size="10" fill="var(--ok)">紧贴障碍绕过，几乎不搜反方向</text>
+          </svg>
+          <div class="diagram-cap">对比：Dijkstra 盲目向外铺开水波纹，A* 则在启发函数引导下直奔目标</div>
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">微实验 1：亲眼对比“水波纹”与“定向光束”</div>
+            <div class="try-desc">在右侧同一张带障碍墙的地图上，先运行 Dijkstra 看它铺满大半张图，再切换 A* 对比“已扩展节点数”！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn sm" onclick="runDemo('u-trap', 'dijkstra', true)">▶ 演示 Dijkstra</button>
+            <button class="btn sm primary" onclick="runDemo('u-trap', 'astar-man', true)">▶ 演示 A* 寻路</button>
+          </div>
+        </div>
+
+        <div class="quiz-box">
+          <div class="quiz-head">随堂小测 · 1/5</div>
+          <div class="quiz-q">在大型二维地图中，同样都能找到最短路径，为什么 A* 通常比 Dijkstra 快得多？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q0', false, this, '不对哦！A* 和 Dijkstra 用的都是优先队列（最小堆），单次出队复杂度一样，差别在于扩展的节点数量。')">A. 因为 A* 不用优先队列，时间复杂度降到了 O(1)</button>
+            <button class="quiz-opt" onclick="answerQuiz('q0', true, this, '完全正确！A* 利用终点坐标提供的启发信息，大幅剪枝了背离终点的无效搜索区域，扩展节点数远少于 Dijkstra。')">B. 因为 A* 利用到终点的距离估计，优先探索朝向终点的区域，大幅减少扩展节点数</button>
+            <button class="quiz-opt" onclick="answerQuiz('q0', false, this, 'A* 并不是牺牲最优性换速度——只要启发函数满足可采纳性，A* 照样保证 100% 找到最短路！')">C. 因为 A* 放弃了最短路径保证，随便找一条通路就停</button>
+          </div>
+          <div class="quiz-fb" id="fb-q0"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <span></span>
+        <button class="btn primary" onclick="goLesson(1)">下一课：核心公式 f = g + h →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 2 课：估价函数 f=g+h ===== -->
+    <article class="lesson-pane" id="lesson-1">
+      <div class="lesson-eyebrow"><span class="badge blue">第 2 课 · 核心机制</span> <span>约 4 分钟</span></div>
+      <h2 class="lesson-title">灵魂公式：估价函数 <span class="math">f(n) = g(n) + h(n)</span></h2>
+      <p class="lesson-lead">A* 算法并不神秘——它本质上就是把 Dijkstra 优先队列的排序关键字从 <span class="math">g(n)</span> 改成了 <span class="math">f(n) = g(n) + h(n)</span>。</p>
+
+      <div class="lesson-body">
+        <div class="formula-box">
+          <span class="math">f(n)</span> = <span class="math">g(n)</span> + <span class="math">h(n)</span>
+        </div>
+
+        <h3>1. 三个字母分别代表什么？</h3>
+        <ul>
+          <li><span class="code-inline">g(n)</span>（<strong>已付出的真实代价</strong>）：从起点 <span class="math">S</span> 沿着当前路径走到节点 <span class="math">n</span> 的<strong>精确开销</strong>（和 Dijkstra 里的 <span class="code-inline">dist[n]</span> 完全一样）。</li>
+          <li><span class="code-inline">h(n)</span>（<strong>启发函数 / 乐观预估</strong>）：从节点 <span class="math">n</span> 到终点 <span class="math">T</span> 的<strong>预计剩余代价</strong>（Heuristic）。它不需要知道墙在哪，直接按几何距离算！</li>
+          <li><span class="code-inline">f(n)</span>（<strong>总估价</strong>）：如果经过节点 <span class="math">n</span> 到达终点，预计<strong>全程总代价</strong>是多少。优先队列每次总是弹出 <span class="math">f(n)</span> 最小的节点来扩展！</li>
+        </ul>
+
+        <h3>2. 网格地图最常用的 3 种启发函数 <span class="math">h(n)</span></h3>
+        <p>设当前格坐标为 (<span class="math">x</span><sub>1</sub>, <span class="math">y</span><sub>1</sub>)，终点为 (<span class="math">x</span><sub>2</sub>, <span class="math">y</span><sub>2</sub>)，令 <span class="math">dx</span> = |<span class="math">x</span><sub>1</sub> &minus; <span class="math">x</span><sub>2</sub>|，<span class="math">dy</span> = |<span class="math">y</span><sub>1</sub> &minus; <span class="math">y</span><sub>2</sub>|：</p>
+
+        <div class="table-wrap">
+          <table class="cmp-table">
+            <thead>
+              <tr><th>启发函数</th><th>数学公式</th><th>适用移动方式</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>曼哈顿距离</strong></td>
+                <td><span class="math">h</span> = <span class="math">dx</span> + <span class="math">dy</span></td>
+                <td>只能上下左右 <strong>4 方向</strong>移动（最经典）</td>
+              </tr>
+              <tr>
+                <td><strong>欧几里得距离</strong></td>
+                <td><span class="math">h</span> = &radic;(<span class="math">dx</span><sup>2</sup> + <span class="math">dy</span><sup>2</sup>)</td>
+                <td>允许<strong>任意角度</strong>自由移动（如导航网格）</td>
+              </tr>
+              <tr>
+                <td><strong>切比雪夫 / 八角距离</strong></td>
+                <td>max(<span class="math">dx</span>, <span class="math">dy</span>) 或 (<span class="math">dx</span>+<span class="math">dy</span>)+(&radic;2&minus;2)min(<span class="math">dx</span>,<span class="math">dy</span>)</td>
+                <td>允许<strong>8 方向</strong>（含对角线，代价 1 或 &radic;2）</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout ok">
+          <strong>数据结构视角：</strong>A* 维护两个集合：<strong>Open 集合</strong>（最小堆，存放“已发现但尚未扩展”的候选格子）与 <strong>Closed 集合</strong>（布尔数组，存放“已经确定扩展过”的格子）。每次从 Open 堆顶取出 <span class="math">f</span> 最小的格子，松弛它的邻居并放入 Open！
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">微实验 2：逐格透视 g / h / f 数值变化</div>
+            <div class="try-desc">点击按钮开启右侧格子的 <strong>g/h 详情显示</strong>，并单步观察每次从 Open 堆顶弹出的格子为什么被选中！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn sm primary" onclick="runDemoWithDetail('maze', 'astar-man')">▶ 开启 g/h 详情并演示</button>
+          </div>
+        </div>
+
+        <div class="quiz-box">
+          <div class="quiz-head">随堂小测 · 2/5</div>
+          <div class="quiz-q">在 4 方向无障碍网格中，当前格 (2, 3) 距离起点已走 5 步，终点在 (6, 8)。使用曼哈顿距离时，该格的 g、h、f 分别是？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q1', false, this, '再算一下曼哈顿距离：|2-6| + |3-8| = 4 + 5 = 9，不是 5 哦！')">A. g = 5, h = 5, f = 10</button>
+            <button class="quiz-opt" onclick="answerQuiz('q1', true, this, '答对了！g = 5（已走步数），h = |2-6| + |3-8| = 4 + 5 = 9，所以 f = g + h = 14。')">B. g = 5, h = 9, f = 14</button>
+            <button class="quiz-opt" onclick="answerQuiz('q1', false, this, 'f 是 g 与 h 之和，不是差值哦。')">C. g = 9, h = 5, f = 14</button>
+          </div>
+          <div class="quiz-fb" id="fb-q1"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(0)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(2)">下一课：可采纳性与最优性证明 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 3 课：可采纳性与一致性 ===== -->
+    <article class="lesson-pane" id="lesson-2">
+      <div class="lesson-eyebrow"><span class="badge warn">第 3 课 · 核心理论</span> <span>约 4 分钟</span></div>
+      <h2 class="lesson-title">为什么 A* 一定能找到最短路？——可采纳性证明</h2>
+      <p class="lesson-lead">既然 <span class="math">h(n)</span> 只是“猜的”，万一猜错了把真正的好路漏掉了怎么办？答案藏在一条黄金铁律里：<strong>宁可低估，绝不高估！</strong></p>
+
+      <div class="lesson-body">
+        <h3>1. 黄金条件：可采纳性（Admissibility）</h3>
+        <p>设 <span class="math">h</span><sup>*</sup>(<span class="math">n</span>) 为节点 <span class="math">n</span> 到终点 <span class="math">T</span> 的<strong>真实最短距离</strong>。如果对于图中任意节点 <span class="math">n</span>，启发函数都满足：</p>
+        <div class="formula-box">
+          0 &le; <span class="math">h(n)</span> &le; <span class="math">h</span><sup>*</sup>(<span class="math">n</span>) &nbsp;&nbsp;（永远不“高估”剩余路程）
+        </div>
+        <p>我们就称 <span class="math">h(n)</span> 是<strong>可采纳的（Admissible）</strong>。例如在每步代价 &ge; 1 的 4 方向网格中，曼哈顿距离是“没有任何障碍且每步都是最低代价 1”时的理想距离，因此绝不可能超过真实最短路，天然可采纳！</p>
+
+        <h3>2. 反证法：3 行证明 A* 首次弹出终点即最优</h3>
+        <p>设真实最短路代价为 <span class="math">C</span><sup>*</sup>。假设 A* 第一次从堆顶弹出终点 <span class="math">T</span> 时，找到的却是一条更差的路径，代价 <span class="math">g(T)</span> &gt; <span class="math">C</span><sup>*</sup>：</p>
+        <ol>
+          <li>此时真正最短路径上，必然还存在至少一个<strong>仍在 Open 集合里</strong>的节点 <span class="math">u</span>（因为起点进过 Open，终点刚出堆）。</li>
+          <li>因为 <span class="math">u</span> 在最短路上，且 <span class="math">h</span> 可采纳，所以：<br>
+            <span class="code-inline">f(u) = g(u) + h(u) &le; g*(u) + h*(u) = C*</span>。</li>
+          <li>由于 <span class="math">h(T)</span> = 0，终点出堆时的优先级 <span class="code-inline">f(T) = g(T) &gt; C* &ge; f(u)</span>。<strong>最小堆怎么可能先弹出更大的 <span class="math">f(T)</span> 而把更小的 <span class="math">f(u)</span> 留在堆里？矛盾！</strong></li>
+        </ol>
+
+        <h3>3. 反面教材：高估 <span class="math">h(n)</span> 会掉进什么坑？</h3>
+        <p>如果我们把启发权重放大，比如用 <strong>Weighted A*（<span class="math">f = g + 2h</span>）</strong> 或直接忽略 <span class="math">g</span> 的<strong>贪心 BFS</strong>，它就会过度迷信直线方向——哪怕前方是一大片<strong>代价 = 3 的泥潭</strong>，它也会一头扎进去，错过旁边绕行代价更低的好路！</p>
+
+        <div class="callout warn">
+          <strong>进阶概念 · 一致性（Consistency）：</strong>若对任意边 <span class="math">u &rarr; v</span> 满足 <span class="math">h(u) &le; cost(u, v) + h(v)</span>（类似三角形两边之和大于第三边），则每个节点<strong>首次出堆时 <span class="math">g(u)</span> 就已经最优</strong>，无需二次入队；一般只需可采纳性就能保证终点最优。
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">微实验 3：泥潭陷阱——亲眼看高估 <span class="math">h</span> 如何翻车！</div>
+            <div class="try-desc">右侧“泥潭加权”地图中，直走穿过泥潭代价高达 <strong>20</strong>，绕路只需 <strong>14</strong>。对比 Weighted A* (2h) 与标准 A*！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn sm" onclick="runDemo('swamp', 'wastar', true)">▶ Weighted A* (2h) 踩坑</button>
+            <button class="btn sm primary" onclick="runDemo('swamp', 'astar-man', true)">▶ 标准 A* 找到最优</button>
+          </div>
+        </div>
+
+        <div class="quiz-box">
+          <div class="quiz-head">随堂小测 · 3/5</div>
+          <div class="quiz-q">在一个 4 方向网格地图中，普通格子代价为 1，但地图里存在若干“加速带”格子，走一步代价只有 0.5。此时直接用曼哈顿距离作为 h(n)，还能保证 A* 找到最短路吗？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q2', false, this, '危险！如果存在代价 0.5 的格子，真实最短路可能比曼哈顿距离更小，导致 h(n) > h*(n)，破坏可采纳性！')">A. 可以，曼哈顿距离永远满足可采纳性</button>
+            <button class="quiz-opt" onclick="answerQuiz('q2', true, this, '非常敏锐！加速带使真实最短路可能小于 dx+dy，从而导致 h(n) 高估。正确做法是把 h(n) 乘以最小边权 0.5，即 0.5*(dx+dy)！')">B. 不能！因为曼哈顿距离可能高估真实代价，必须改用 0.5 &times; (dx + dy)</button>
+          </div>
+          <div class="quiz-fb" id="fb-q2"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(1)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(3)">下一课：算法横向对比与避坑 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 4 课：算法横向对比与常见坑 ===== -->
+    <article class="lesson-pane" id="lesson-3">
+      <div class="lesson-eyebrow"><span class="badge purple">第 4 课 · 横向对比与避坑</span> <span>约 3 分钟</span></div>
+      <h2 class="lesson-title">一张公式统领四种寻路算法 + 工程避坑清单</h2>
+      <p class="lesson-lead">其实 Dijkstra、贪心最佳优先搜索、A*、Weighted A* 是一家人——它们只是 <span class="math">f(n) = w</span><sub>1</sub><span class="math">g(n) + w</span><sub>2</sub><span class="math">h(n)</span> 的不同特例！</p>
+
+      <div class="lesson-body">
+        <h3>1. 四大寻路算法全家福对比</h3>
+        <div class="table-wrap">
+          <table class="cmp-table">
+            <thead>
+              <tr><th>算法</th><th>优先级公式</th><th>是否保证最优</th><th>搜索行为特征</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Dijkstra</strong></td>
+                <td><span class="math">f = g</span>（即 <span class="math">h = 0</span>）</td>
+                <td><span class="badge green">保证最优</span></td>
+                <td>水波纹均匀扩散，扩展节点最多，稳但慢</td>
+              </tr>
+              <tr>
+                <td><strong>贪心 BFS</strong></td>
+                <td><span class="math">f = h</span>（即 <span class="math">g = 0</span>）</td>
+                <td><span class="badge red">不保证</span></td>
+                <td>只看终点狂冲，无障碍极快，遇 U 形墙或泥潭极易走弯路</td>
+              </tr>
+              <tr>
+                <td><strong>标准 A*</strong></td>
+                <td><span class="math">f = g + h</span>（<span class="math">h &le; h</span><sup>*</sup>）</td>
+                <td><span class="badge green">保证最优</span></td>
+                <td>兼顾已走代价与终点方向，在保证最优下扩展节点最少</td>
+              </tr>
+              <tr>
+                <td><strong>Weighted A*</strong></td>
+                <td><span class="math">f = g + w&middot;h</span>（<span class="math">w &gt; 1</span>）</td>
+                <td><span class="badge warn">&le; w &middot; 最优</span></td>
+                <td>用“最多差 <span class="math">w</span> 倍”换取极快速度，大型游戏与机器人常用</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>2. 写 A* 最容易踩的 3 个实战坑</h3>
+        <div class="callout err">
+          <strong>坑 1：堆里存在“过期旧条目”没跳过！</strong><br>
+          C++ 的 <span class="code-inline">priority_queue</span> 不支持直接修改堆内元素，松弛到更小的 <span class="code-inline">g[v]</span> 时会再次 <span class="code-inline">push</span>。出队时<strong>必须加一句</strong> <span class="code-inline">if (cur.g &gt; g[u]) continue;</span>（或判 <span class="code-inline">closed[u]</span>），否则会重复扩展导致 TLE！
+        </div>
+        <div class="callout warn">
+          <strong>坑 2：同 <span class="math">f</span> 值平局（Tie-Breaking）导致多搜一片！</strong><br>
+          在空旷网格中，很多格子具有完全相同的 <span class="math">f = g + h</span>。如果平局时优先选 <strong><span class="math">h</span> 更小（即 <span class="math">g</span> 更大、更靠近终点）</strong> 的节点，就能直穿空地而不用把整个矩形全搜一遍！
+        </div>
+        <div class="callout">
+          <strong>坑 3：8 方向寻路时的“穿墙角”（Corner Cutting）</strong><br>
+          允许走对角线时，若 <span class="code-inline">(r, c+1)</span> 和 <span class="code-inline">(r+1, c)</span> 都是墙，不能直接斜穿到 <span class="code-inline">(r+1, c+1)</span>，否则游戏角色会卡进墙角缝隙。
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">微实验 4：U 形墙陷阱大比拼</div>
+            <div class="try-desc">在右侧“U形墙陷阱”上，依次切换 Dijkstra、贪心 BFS、A*，观察它们如何应对“看似近在咫尺却被墙兜住”的陷阱！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn sm" onclick="runDemo('u-trap', 'dijkstra', true)">▶ Dijkstra</button>
+            <button class="btn sm" onclick="runDemo('u-trap', 'greedy', true)">▶ 贪心 BFS</button>
+            <button class="btn sm primary" onclick="runDemo('u-trap', 'astar-man', true)">▶ A* (曼哈顿)</button>
+          </div>
+        </div>
+
+        <div class="quiz-box">
+          <div class="quiz-head">随堂小测 · 4/5</div>
+          <div class="quiz-q">如果两个候选节点的 f(n) 完全相等：节点 A (g=8, h=4)，节点 B (g=3, h=9)。为了让 A* 在空旷区域更快抵达终点，Tie-Breaking 通常应优先弹出谁？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q3', true, this, '完全正确！同 f 值下优先选 h 更小（离终点更近、g 更大）的节点，能让搜索像针一样直刺终点，避免无意义的横向平铺。')">A. 优先弹出节点 A（h 更小，离终点更近）</button>
+            <button class="quiz-opt" onclick="answerQuiz('q3', false, this, '选 h 更大的节点会倾向于停留在起点附近横向铺开，退化成类似 BFS 的平铺行为哦。')">B. 优先弹出节点 B（h 更大，离起点更近）</button>
+          </div>
+          <div class="quiz-fb" id="fb-q3"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(2)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(4)">下一课：实际应用案例 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 5 课：实际应用案例 ===== -->
+    <article class="lesson-pane" id="lesson-4">
+      <div class="lesson-eyebrow"><span class="badge green">第 5 课 · 工业与科研</span> <span>约 3 分钟</span></div>
+      <h2 class="lesson-title">A* 在真实世界中的四大核心战场</h2>
+      <p class="lesson-lead">从《星际争霸》里成百上千个小兵的绕障行军，到自动驾驶汽车的窄路泊车，背后都活跃着 A* 及其变体的身影。</p>
+
+      <div class="lesson-body">
+        <div class="case-grid">
+          <div class="case-card">
+            <h4>1. 游戏 AI 寻路 <span class="badge blue">NavMesh</span></h4>
+            <p>《星际争霸》《王者荣耀》等游戏不会在像素网格上搜，而是把可行走地面划分成凸多边形<strong>导航网格（NavMesh）</strong>。</p>
+            <div class="case-model"><strong>建模：</strong>多边形中心为点，欧几里得距离为 <span class="math">h</span>，A* 搜出多边形通道后用“漏斗算法”拉直路径。</div>
+          </div>
+
+          <div class="case-card">
+            <h4>2. 自动驾驶与机器人 <span class="badge purple">Hybrid A*</span></h4>
+            <p>汽车不能原地 90&deg; 拐弯，必须满足最小转弯半径与车头朝向约束。</p>
+            <div class="case-model"><strong>建模：</strong>状态扩维为 (<span class="math">x, y, &theta;</span>)，用 Reeds-Shepp 曲线长度作 <span class="math">h</span>，规划出平滑可执行的倒车入库轨迹。</div>
+          </div>
+
+          <div class="case-card">
+            <h4>3. 手机地图导航 <span class="badge warn">ALT / A*</span></h4>
+            <p>城市路网有数千万路口，且拥堵路段权重大。单纯用经纬度直线距离估价仍不够紧。</p>
+            <div class="case-model"><strong>建模：</strong>预处理若干<strong>地标（Landmarks）</strong>到全图的最短路，用三角不等式构造更紧的下界 <span class="math">h</span>，加速百倍！</div>
+          </div>
+
+          <div class="case-card">
+            <h4>4. 拼图与状态空间求解 <span class="badge green">15-Puzzle</span></h4>
+            <p>八数码、15 数码、魔方还原本质是在庞大的“状态图”中找最少步数。</p>
+            <div class="case-model"><strong>建模：</strong>每个棋盘布局是一个节点，把所有数字到目标位置的<strong>曼哈顿距离之和</strong>作为 <span class="math">h</span>，秒解数十万状态！</div>
+          </div>
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">微实验 5：迷宫通道与加权地形综合演练</div>
+            <div class="try-desc">试试右侧的“迷宫通道”和“泥潭加权”预设，你也可以直接用鼠标在网格上<strong>拖拽画墙 / 画泥潭 / 拖动 S 和 T</strong>！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn sm primary" onclick="runDemo('maze', 'astar-man', true)">▶ 迷宫通道演练</button>
+            <button class="btn sm" onclick="runDemo('swamp', 'astar-man', true)">▶ 泥潭加权演练</button>
+          </div>
+        </div>
+
+        <div class="quiz-box">
+          <div class="quiz-head">随堂小测 · 5/5</div>
+          <div class="quiz-q">求解“八数码（3&times;3 滑块拼图）”最少步数时，为什么“各数字到目标格的曼哈顿距离之和”是一个可采纳的启发函数？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q4', true, this, '太棒了！每次滑动最多让 1 个数字朝目标靠近 1 格，因此所有数字归位的最少步数绝对不可能小于它们的曼哈顿距离之和！')">A. 因为每次移动滑块最多让一个数字的曼哈顿距离减 1，真实步数一定 &ge; 曼哈顿距离之和</button>
+            <button class="quiz-opt" onclick="answerQuiz('q4', false, this, '反了哦！曼哈顿距离之和忽略了数字之间的互相阻挡，所以它往往比真实步数更小（低估），而非更大。')">B. 因为曼哈顿距离之和永远大于等于真实最少步数</button>
+          </div>
+          <div class="quiz-fb" id="fb-q4"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(3)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(5)">下一课：梯度实战题解 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 6 课：实战题解 ===== -->
+    <article class="lesson-pane" id="lesson-5">
+      <div class="lesson-eyebrow"><span class="badge green">第 6 课 · 学以致用</span> <span>模板到竞赛</span></div>
+      <h2 class="lesson-title">三道梯度经典实战题解（附可交 C++ 代码）</h2>
+      <p class="lesson-lead">从最常用的二维网格模板，到状态空间搜索八数码，再到竞赛经典 K 短路——彻底把 A* 变成你的得分利器。</p>
+
+      <div class="lesson-body">
+        <div class="prob-tabs">
+          <button class="prob-tab on" onclick="switchProb(0)">① 模板：网格寻路 A*</button>
+          <button class="prob-tab" onclick="switchProb(1)">② 状态空间：P1379 八数码</button>
+          <button class="prob-tab" onclick="switchProb(2)">③ 竞赛进阶：P2483 K 短路</button>
+        </div>
+
+        <!-- P1: 2D Grid A* -->
+        <div class="prob-pane on" id="prob-0">
+          <p><strong>题意：</strong>给定 <span class="math">N &times; M</span> 的二维网格（<span class="code-inline">.</span> 表示空地代价 1，<span class="code-inline">~</span> 表示泥潭代价 3，<span class="code-inline">#</span> 表示障碍），求起点 <span class="math">S</span> 到终点 <span class="math">T</span> 的最小代价路径。</p>
+          <p><strong>思路：</strong>由于每步最小代价为 1，直接取曼哈顿距离 <span class="code-inline">h = |r-tr| + |c-tc|</span> 即可保证可采纳性。使用小根堆维护 <span class="code-inline">(f, h, g, r, c)</span>（平局时优先 <span class="code-inline">h</span> 更小），出队判过期即可。</p>
+          <div class="code-header">
+            <span>Grid_AStar_Template.cpp（支持障碍与加权地形）</span>
+            <div>
+              <button class="btn sm" onclick="runDemo('swamp', 'astar-man', true)">在右侧加载样例</button>
+              <button class="btn sm" onclick="copyCode('code-p1')">📋 复制</button>
+            </div>
+          </div>
+          <pre class="cpp-code" id="code-p1"><span class="kw">#include</span> &lt;bits/stdc++.h&gt;
+<span class="kw">using namespace</span> std;
+
+<span class="kw">struct</span> Node {
+    <span class="kw">int</span> f, h, g, r, c;
+    <span class="kw">bool operator</span>&gt;(<span class="kw">const</span> Node&amp; o) <span class="kw">const</span> {
+        <span class="kw">if</span> (f != o.f) <span class="kw">return</span> f &gt; o.f;
+        <span class="kw">return</span> h &gt; o.h; <span class="cm">// Tie-breaking: 同 f 优先 h 更小</span>
+    }
+};
+
+<span class="kw">int</span> <span class="fnc">astarGrid</span>(<span class="kw">const</span> vector&lt;string&gt;&amp; mp, <span class="kw">int</span> sr, <span class="kw">int</span> sc, <span class="kw">int</span> tr, <span class="kw">int</span> tc) {
+    <span class="kw">int</span> R = mp.<span class="fnc">size</span>(), C = mp[<span class="num">0</span>].<span class="fnc">size</span>();
+    <span class="kw">const int</span> INF = <span class="num">1e9</span>;
+    vector&lt;vector&lt;<span class="kw">int</span>&gt;&gt; <span class="fnc">dist</span>(R, vector&lt;<span class="kw">int</span>&gt;(C, INF));
+    <span class="kw">auto</span> H = [&amp;](<span class="kw">int</span> r, <span class="kw">int</span> c) { <span class="kw">return</span> <span class="fnc">abs</span>(r - tr) + <span class="fnc">abs</span>(c - tc); };
+
+    priority_queue&lt;Node, vector&lt;Node&gt;, greater&lt;Node&gt;&gt; pq;
+    dist[sr][sc] = <span class="num">0</span>;
+    pq.<span class="fnc">push</span>({<span class="fnc">H</span>(sr, sc), <span class="fnc">H</span>(sr, sc), <span class="num">0</span>, sr, sc});
+
+    <span class="kw">const int</span> dr[<span class="num">4</span>] = {-<span class="num">1</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>}, dc[<span class="num">4</span>] = {<span class="num">0</span>, <span class="num">0</span>, -<span class="num">1</span>, <span class="num">1</span>};
+    <span class="kw">while</span> (!pq.<span class="fnc">empty</span>()) {
+        <span class="kw">auto</span> cur = pq.<span class="fnc">top</span>(); pq.<span class="fnc">pop</span>();
+        <span class="kw">if</span> (cur.g &gt; dist[cur.r][cur.c]) <span class="kw">continue</span>; <span class="cm">// 跳过过期条目</span>
+        <span class="kw">if</span> (cur.r == tr &amp;&amp; cur.c == tc) <span class="kw">return</span> cur.g;
+
+        <span class="kw">for</span> (<span class="kw">int</span> d = <span class="num">0</span>; d &lt; <span class="num">4</span>; d++) {
+            <span class="kw">int</span> nr = cur.r + dr[d], nc = cur.c + dc[d];
+            <span class="kw">if</span> (nr &lt; <span class="num">0</span> || nr &gt;= R || nc &lt; <span class="num">0</span> || nc &gt;= C || mp[nr][nc] == <span class="num">'#'</span>) <span class="kw">continue</span>;
+            <span class="kw">int</span> w = (mp[nr][nc] == <span class="num">'~'</span>) ? <span class="num">3</span> : <span class="num">1</span>;
+            <span class="kw">int</span> ng = cur.g + w;
+            <span class="kw">if</span> (ng &lt; dist[nr][nc]) {
+                dist[nr][nc] = ng;
+                <span class="kw">int</span> nh = <span class="fnc">H</span>(nr, nc);
+                pq.<span class="fnc">push</span>({ng + nh, nh, ng, nr, nc});
+            }
+        }
+    }
+    <span class="kw">return</span> -<span class="num">1</span>; <span class="cm">// 不可达</span>
+}</pre>
+        </div>
+
+        <!-- P2: Luogu P1379 -->
+        <div class="prob-pane" id="prob-1">
+          <p><strong>题意（洛谷 P1379）：</strong>给定 3&times;3 棋盘的初始状态（数字 <span class="code-inline">1~8</span> 和空格 <span class="code-inline">0</span>），每次可将空格与相邻数字交换，求到达目标态 <span class="code-inline">123804765</span> 的最少步数。</p>
+          <p><strong>思路：</strong>把 9 位字符串视作状态图中的点。估价函数 <span class="math">h(s)</span> 取数字 <span class="code-inline">1~8</span> 当前坐标到目标坐标的<strong>曼哈顿距离之和</strong>（严格可采纳）。相比普通 BFS 扩展上万状态，A* 通常只扩展几十到几百个状态！</p>
+          <div class="code-header">
+            <span>Luogu_P1379_EightPuzzle_AStar.cpp</span>
+            <div>
+              <button class="btn sm" onclick="runDemo('maze', 'astar-man', true)">在右侧加载样例</button>
+              <button class="btn sm" onclick="copyCode('code-p2')">📋 复制</button>
+            </div>
+          </div>
+          <pre class="cpp-code" id="code-p2"><span class="kw">#include</span> &lt;bits/stdc++.h&gt;
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const</span> string TARGET = <span class="num">"123804765"</span>;
+<span class="kw">int</span> tx[<span class="num">9</span>], ty[<span class="num">9</span>];
+
+<span class="kw">int</span> <span class="fnc">calcH</span>(<span class="kw">const</span> string&amp; s) {
+    <span class="kw">int</span> h = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; <span class="num">9</span>; i++) {
+        <span class="kw">int</span> d = s[i] - <span class="num">'0'</span>;
+        <span class="kw">if</span> (d != <span class="num">0</span>) h += <span class="fnc">abs</span>(i / <span class="num">3</span> - tx[d]) + <span class="fnc">abs</span>(i % <span class="num">3</span> - ty[d]);
+    }
+    <span class="kw">return</span> h;
+}
+
+<span class="kw">int</span> <span class="fnc">main</span>() {
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; <span class="num">9</span>; i++) { tx[TARGET[i] - <span class="num">'0'</span>] = i / <span class="num">3</span>; ty[TARGET[i] - <span class="num">'0'</span>] = i % <span class="num">3</span>; }
+    string st; cin &gt;&gt; st;
+
+    <span class="kw">using</span> State = pair&lt;<span class="kw">int</span>, string&gt;;
+    priority_queue&lt;State, vector&lt;State&gt;, greater&lt;State&gt;&gt; pq;
+    unordered_map&lt;string, <span class="kw">int</span>&gt; dist;
+    dist[st] = <span class="num">0</span>;
+    pq.<span class="fnc">push</span>({<span class="fnc">calcH</span>(st), st});
+
+    <span class="kw">const int</span> dx[<span class="num">4</span>] = {-<span class="num">1</span>, <span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span>}, dy[<span class="num">4</span>] = {<span class="num">0</span>, <span class="num">0</span>, -<span class="num">1</span>, <span class="num">1</span>};
+    <span class="kw">while</span> (!pq.<span class="fnc">empty</span>()) {
+        <span class="kw">auto</span> [f, u] = pq.<span class="fnc">top</span>(); pq.<span class="fnc">pop</span>();
+        <span class="kw">int</span> g = dist[u];
+        <span class="kw">if</span> (u == TARGET) { cout &lt;&lt; g &lt;&lt; <span class="num">'\n'</span>; <span class="kw">return</span> <span class="num">0</span>; }
+        <span class="kw">if</span> (f &gt; g + <span class="fnc">calcH</span>(u)) <span class="kw">continue</span>;
+
+        <span class="kw">int</span> pos = u.<span class="fnc">find</span>(<span class="num">'0'</span>), x = pos / <span class="num">3</span>, y = pos % <span class="num">3</span>;
+        <span class="kw">for</span> (<span class="kw">int</span> d = <span class="num">0</span>; d &lt; <span class="num">4</span>; d++) {
+            <span class="kw">int</span> nx = x + dx[d], ny = y + dy[d];
+            <span class="kw">if</span> (nx &lt; <span class="num">0</span> || nx &gt;= <span class="num">3</span> || ny &lt; <span class="num">0</span> || ny &gt;= <span class="num">3</span>) <span class="kw">continue</span>;
+            string v = u; <span class="fnc">swap</span>(v[pos], v[nx * <span class="num">3</span> + ny]);
+            <span class="kw">if</span> (!dist.<span class="fnc">count</span>(v) || g + <span class="num">1</span> &lt; dist[v]) {
+                dist[v] = g + <span class="num">1</span>;
+                pq.<span class="fnc">push</span>({g + <span class="num">1</span> + <span class="fnc">calcH</span>(v), v});
+            }
+        }
+    }
+}</pre>
+        </div>
+
+        <!-- P3: K-th Shortest Path -->
+        <div class="prob-pane" id="prob-2">
+          <p><strong>题意（经典 K 短路 / 洛谷 P2483 思路）：</strong>给定有向正权图，求从起点 <span class="math">S</span> 到终点 <span class="math">T</span> 的第 <span class="math">K</span> 短路径长度（允许重复经过点与边）。</p>
+          <p><strong>神级建模：</strong>先在<strong>反图上从 <span class="math">T</span> 跑一遍 Dijkstra</strong>，算出每个点到 <span class="math">T</span> 的<strong>精确最短距离 <span class="code-inline">h[u] = dist_rev[u]</span></strong>！这是最完美的启发函数（<span class="math">h = h</span><sup>*</sup>）。随后从 <span class="math">S</span> 跑 A*（不做 closed 限制），<strong>第 <span class="math">K</span> 次从堆顶弹出终点 <span class="math">T</span> 时的 <span class="math">g</span> 值，就是严格的第 <span class="math">K</span> 短路！</strong></p>
+          <div class="code-header">
+            <span>Kth_Shortest_Path_AStar.cpp（反向 Dijkstra + A*）</span>
+            <div>
+              <button class="btn sm" onclick="runDemo('u-trap', 'astar-man', true)">在右侧加载样例</button>
+              <button class="btn sm" onclick="copyCode('code-p3')">📋 复制</button>
+            </div>
+          </div>
+          <pre class="cpp-code" id="code-p3"><span class="kw">#include</span> &lt;bits/stdc++.h&gt;
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">5005</span>;
+<span class="kw">const double</span> INF = <span class="num">1e18</span>;
+vector&lt;pair&lt;<span class="kw">int</span>, <span class="kw">double</span>&gt;&gt; g[N], rg[N];
+<span class="kw">double</span> h[N];
+<span class="kw">int</span> cnt[N];
+
+<span class="kw">void</span> <span class="fnc">dijkstraRev</span>(<span class="kw">int</span> n, <span class="kw">int</span> T) {
+    <span class="fnc">fill</span>(h, h + n + <span class="num">1</span>, INF);
+    <span class="kw">using</span> P = pair&lt;<span class="kw">double</span>, <span class="kw">int</span>&gt;;
+    priority_queue&lt;P, vector&lt;P&gt;, greater&lt;P&gt;&gt; pq;
+    h[T] = <span class="num">0</span>; pq.<span class="fnc">push</span>({<span class="num">0</span>, T});
+    <span class="kw">while</span> (!pq.<span class="fnc">empty</span>()) {
+        <span class="kw">auto</span> [d, u] = pq.<span class="fnc">top</span>(); pq.<span class="fnc">pop</span>();
+        <span class="kw">if</span> (d &gt; h[u]) <span class="kw">continue</span>;
+        <span class="kw">for</span> (<span class="kw">auto</span> [v, w] : rg[u])
+            <span class="kw">if</span> (h[u] + w &lt; h[v]) { h[v] = h[u] + w; pq.<span class="fnc">push</span>({h[v], v}); }
+    }
+}
+
+<span class="kw">struct</span> Node {
+    <span class="kw">double</span> f, g; <span class="kw">int</span> u;
+    <span class="kw">bool operator</span>&gt;(<span class="kw">const</span> Node&amp; o) <span class="kw">const</span> { <span class="kw">return</span> f &gt; o.f; }
+};
+
+<span class="kw">double</span> <span class="fnc">kthShortest</span>(<span class="kw">int</span> n, <span class="kw">int</span> S, <span class="kw">int</span> T, <span class="kw">int</span> K) {
+    <span class="fnc">dijkstraRev</span>(n, T);
+    <span class="kw">if</span> (h[S] &gt;= INF / <span class="num">2</span>) <span class="kw">return</span> -<span class="num">1</span>;
+    <span class="kw">if</span> (S == T) K++; <span class="cm">// 若要求至少走一条边</span>
+    priority_queue&lt;Node, vector&lt;Node&gt;, greater&lt;Node&gt;&gt; pq;
+    pq.<span class="fnc">push</span>({h[S], <span class="num">0</span>, S});
+
+    <span class="kw">while</span> (!pq.<span class="fnc">empty</span>()) {
+        <span class="kw">auto</span> cur = pq.<span class="fnc">top</span>(); pq.<span class="fnc">pop</span>();
+        <span class="kw">if</span> (++cnt[cur.u] &gt; K) <span class="kw">continue</span>; <span class="cm">// 每个点最多出队 K 次</span>
+        <span class="kw">if</span> (cur.u == T &amp;&amp; cnt[T] == K) <span class="kw">return</span> cur.g;
+        <span class="kw">for</span> (<span class="kw">auto</span> [v, w] : g[cur.u]) {
+            <span class="kw">if</span> (h[v] &lt; INF / <span class="num">2</span> &amp;&amp; cnt[v] &lt; K)
+                pq.<span class="fnc">push</span>({cur.g + w + h[v], cur.g + w, v});
+        }
+    }
+    <span class="kw">return</span> -<span class="num">1</span>;
+}</pre>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(4)">← 上一课</button>
+        <span style="color:var(--ok); font-weight:600; font-size:13px;">🎉 全部 6 课完成！欢迎在右侧自由绘制障碍和泥潭实验</span>
+      </div>
+    </article>
+
+  </section>
+
+  <!-- ==================== 右栏：吸顶实时交互动画台 ==================== -->
+  <aside class="workbench-sticky">
+    <section class="panel">
+      <div class="ctrl-group">
+        <div class="ctrl-row" id="algoRow">
+          <span class="ctrl-label">算法</span>
+          <button class="btn sm active-chip" data-algo="astar-man" onclick="setAlgo('astar-man')">A* (曼哈顿)</button>
+          <button class="btn sm" data-algo="astar-euc" onclick="setAlgo('astar-euc')">A* (欧几里得)</button>
+          <button class="btn sm" data-algo="dijkstra" onclick="setAlgo('dijkstra')">Dijkstra (h=0)</button>
+          <button class="btn sm" data-algo="greedy" onclick="setAlgo('greedy')">贪心 BFS (g=0)</button>
+          <button class="btn sm" data-algo="wastar" onclick="setAlgo('wastar')">Weighted A* (2h)</button>
+        </div>
+
+        <div class="ctrl-row" id="presetRow">
+          <span class="ctrl-label">地图</span>
+          <button class="btn sm" onclick="loadPreset('u-trap')">U形墙陷阱</button>
+          <button class="btn sm" onclick="loadPreset('maze')">迷宫通道</button>
+          <button class="btn sm" onclick="loadPreset('swamp')">泥潭加权</button>
+          <button class="btn sm" onclick="loadPreset('clear')">清空障碍</button>
+        </div>
+
+        <div class="ctrl-row" id="brushRow">
+          <span class="ctrl-label">画笔</span>
+          <button class="btn sm active-chip" data-brush="wall" onclick="setBrush('wall')">⬛ 墙</button>
+          <button class="btn sm" data-brush="swamp" onclick="setBrush('swamp')">🟨 泥潭(×3)</button>
+          <button class="btn sm" data-brush="erase" onclick="setBrush('erase')">⬜ 擦除</button>
+          <button class="btn sm" data-brush="start" onclick="setBrush('start')">🟩 起点 S</button>
+          <button class="btn sm" data-brush="goal" onclick="setBrush('goal')">🟥 终点 T</button>
+        </div>
+      </div>
+
+      <!-- Live Metrics Bar -->
+      <div class="metrics-bar">
+        <div class="metric-card">
+          <div class="m-label">已扩展节点数</div>
+          <div class="m-val" id="mClosed">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-label">Open 集合大小</div>
+          <div class="m-val" id="mOpen">0</div>
+        </div>
+        <div class="metric-card">
+          <div class="m-label">当前路径代价</div>
+          <div class="m-val" id="mCost">—</div>
+        </div>
+        <div class="metric-card" id="mOptCard">
+          <div class="m-label">是否最优</div>
+          <div class="m-val" id="mOpt">搜索中</div>
+        </div>
+      </div>
+
+      <div class="graph-head">
+        <span class="graph-head-title">9×13 交互寻路网格（点击/拖拽绘制）</span>
+        <div class="legend">
+          <span><i class="lg-start"></i>起点</span>
+          <span><i class="lg-goal"></i>终点</span>
+          <span><i class="lg-wall"></i>障碍</span>
+          <span><i class="lg-swamp"></i>泥潭(3)</span>
+          <span><i class="lg-open"></i>Open</span>
+          <span><i class="lg-closed"></i>已扩展</span>
+          <span><i class="lg-cur"></i>当前</span>
+          <span><i class="lg-path"></i>路径</span>
+        </div>
+      </div>
+
+      <div class="grid-wrap">
+        <div class="grid-board" id="gridBoard"></div>
+      </div>
+
+      <div class="hover-bar">
+        <span id="hoverInfo">悬停任意格子查看 (r, c) 与 g / h / f 数值</span>
+        <label class="toggle-chk">
+          <input type="checkbox" id="detailChk" onchange="toggleDetail(this.checked)">
+          格内显示 g/h 详情
+        </label>
+      </div>
+
+      <!-- Step Message & Playback -->
+      <div class="step-box">
+        <div class="msg" id="stepMsg">准备就绪，点击 ▶ 播放观看搜索过程。</div>
+        <div class="tl-row">
+          <button class="btn" id="bFirst" onclick="seek(0)" title="第一步">|&lt;</button>
+          <button class="btn" id="bPrev" onclick="stepBy(-1)" title="上一步 (←)">&lt;</button>
+          <button class="btn primary" id="bPlay" onclick="togglePlay()" title="播放/暂停 (Space)">▶ 播放</button>
+          <button class="btn" id="bNext" onclick="stepBy(1)" title="下一步 (→)">&gt;</button>
+          <button class="btn" id="bLast" onclick="seek(trace.length - 1)" title="最后一步">&gt;|</button>
+          <input id="slider" type="range" min="0" max="0" value="0" oninput="pause(); seek(+this.value)">
+          <span class="counter" id="counter">0 / 0</span>
+          <select id="speedSel" onchange="updateSpeed()">
+            <option value="520">0.5×</option>
+            <option value="240" selected>1×</option>
+            <option value="110">2×</option>
+            <option value="45">4×</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom Debugger Panel -->
+    <section class="panel">
+      <div class="dbg-tabs">
+        <button class="dbg-tab on" id="tabCode" onclick="switchDbg(0)">C++ 伪代码追踪</button>
+        <button class="dbg-tab" id="tabPQ" onclick="switchDbg(1)">Open 优先队列 (Top 8)</button>
+      </div>
+
+      <div class="dbg-pane on" id="dbg-0">
+        <div class="code" id="pseudoCode"></div>
+      </div>
+
+      <div class="dbg-pane" id="dbg-1">
+        <div class="pq-list" id="pqList"></div>
+      </div>
+    </section>
+  </aside>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  /* ==================== Theme & Course Navigation ==================== */
+  const root = document.documentElement;
+  const savedTheme = localStorage.getItem('algo-theme');
+  if (savedTheme) root.setAttribute('data-theme', savedTheme);
+  document.getElementById('themeToggle').onclick = () => {
+    const isDark = root.getAttribute('data-theme') === 'dark' ||
+      (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = isDark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('algo-theme', next);
+  };
+
+  const visited = new Set([0]);
+  window.goLesson = (idx) => {
+    visited.add(idx);
+    document.querySelectorAll('.lesson-pane').forEach((el, i) => el.classList.toggle('active', i === idx));
+    document.querySelectorAll('.lesson-pill').forEach((el, i) => {
+      el.classList.toggle('active', i === idx);
+      el.classList.toggle('done', visited.has(i) && i !== idx);
+    });
+    document.getElementById('progressText').textContent = `进度 ${visited.size}/6`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  window.answerQuiz = (qid, ok, btn, msg) => {
+    const box = btn.closest('.quiz-box');
+    box.querySelectorAll('.quiz-opt').forEach(b => b.classList.remove('correct', 'wrong'));
+    btn.classList.add(ok ? 'correct' : 'wrong');
+    const fb = document.getElementById('fb-' + qid);
+    fb.textContent = (ok ? '✓ ' : '✗ ') + msg;
+    fb.className = 'quiz-fb show ' + (ok ? 'ok' : 'err');
+  };
+
+  window.switchProb = (idx) => {
+    document.querySelectorAll('.prob-tab').forEach((el, i) => el.classList.toggle('on', i === idx));
+    document.querySelectorAll('.prob-pane').forEach((el, i) => el.classList.toggle('on', i === idx));
+  };
+
+  let toastTimer = null;
+  function showToast(txt) {
+    const t = document.getElementById('toast');
+    t.textContent = txt;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  window.copyCode = (id) => {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text).then(() => showToast('✓ 已复制 C++ 代码到剪贴板'));
+  };
+
+  window.switchDbg = (idx) => {
+    document.getElementById('tabCode').classList.toggle('on', idx === 0);
+    document.getElementById('tabPQ').classList.toggle('on', idx === 1);
+    document.getElementById('dbg-0').classList.toggle('on', idx === 0);
+    document.getElementById('dbg-1').classList.toggle('on', idx === 1);
+  };
+
+  /* ==================== Pseudocode Lines ==================== */
+  const PSEUDO = [
+    '<span class="kw">priority_queue</span>&lt;Node&gt; open;  <span class="cm">// 按 f(n) 小根堆排序</span>',
+    'g[S] = <span class="num">0</span>; open.<span class="fnc">push</span>({S, <span class="fnc">f</span>(S)});',
+    '<span class="kw">while</span> (!open.<span class="fnc">empty</span>()) {',
+    '    u = open.<span class="fnc">top</span>(); open.<span class="fnc">pop</span>();',
+    '    <span class="kw">if</span> (closed[u]) <span class="kw">continue</span>;  <span class="cm">// 跳过已扩展的过期条目</span>',
+    '    closed[u] = <span class="kw">true</span>;',
+    '    <span class="kw">if</span> (u == T) <span class="kw">return</span> <span class="fnc">reconstruct_path</span>(T);',
+    '    <span class="kw">for</span> (v : <span class="fnc">neighbors</span>(u)) {',
+    '        ng = g[u] + <span class="fnc">cost</span>(v);',
+    '        <span class="kw">if</span> (ng &lt; g[v]) {',
+    '            g[v] = ng; parent[v] = u;',
+    '            open.<span class="fnc">push</span>({v, <span class="fnc">calcPriority</span>(ng, <span class="fnc">h</span>(v))});',
+    '        }',
+    '    }',
+    '}'
+  ];
+  const pseudoEl = document.getElementById('pseudoCode');
+  pseudoEl.innerHTML = PSEUDO.map((s, i) =>
+    `<div class="line" data-ln="${i + 1}"><span class="ln">${i + 1}</span><span>${s}</span></div>`
+  ).join('');
+
+  /* ==================== Grid & State ==================== */
+  const ROWS = 9, COLS = 13;
+  // terrain: 0 = empty (cost 1), 1 = wall, 2 = swamp (cost 3)
+  let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+  let start = { r: 4, c: 2 };
+  let goal = { r: 4, c: 10 };
+  let curAlgo = 'astar-man';
+  let curBrush = 'wall';
+  let isDrawing = false;
+
+  let trace = [];
+  let stepIdx = 0;
+  let playing = false;
+  let playTimer = null;
+  let stepDelay = 240;
+  let trueOptimalCost = Infinity;
+
+  const ALGO_NAME = {
+    'astar-man': 'A* (曼哈顿)',
+    'astar-euc': 'A* (欧几里得)',
+    'dijkstra': 'Dijkstra (h=0)',
+    'greedy': '贪心 BFS (g=0)',
+    'wastar': 'Weighted A* (2h)'
+  };
+
+  function cellKey(r, c) { return r * COLS + c; }
+  function cellCost(r, c) { return grid[r][c] === 2 ? 3 : 1; }
+
+  function heuristic(r, c, algo) {
+    const dr = Math.abs(r - goal.r), dc = Math.abs(c - goal.c);
+    if (algo === 'dijkstra') return 0;
+    if (algo === 'astar-euc') return Math.round(Math.hypot(dr, dc) * 10) / 10;
+    return dr + dc;
+  }
+
+  function calcPriority(g, h, algo) {
+    if (algo === 'dijkstra') return g;
+    if (algo === 'greedy') return h;
+    if (algo === 'wastar') return Math.round((g + 2 * h) * 10) / 10;
+    return Math.round((g + h) * 10) / 10;
+  }
+
+  function fmtNum(v) {
+    if (v === undefined || v === null || !isFinite(v)) return '∞';
+    return Number.isInteger(v) ? String(v) : v.toFixed(1);
+  }
+
+  /* ==================== Exact Dijkstra for Optimal Reference ==================== */
+  function computeExactOptimal() {
+    const dist = Array(ROWS * COLS).fill(Infinity);
+    const vis = Array(ROWS * COLS).fill(false);
+    const sk = cellKey(start.r, start.c);
+    const tk = cellKey(goal.r, goal.c);
+    dist[sk] = 0;
+    const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+    while (true) {
+      let u = -1, best = Infinity;
+      for (let i = 0; i < ROWS * COLS; i++) {
+        if (!vis[i] && dist[i] < best) { best = dist[i]; u = i; }
+      }
+      if (u === -1 || u === tk) break;
+      vis[u] = true;
+      const r = Math.floor(u / COLS), c = u % COLS;
+      for (const [dr, dc] of dirs) {
+        const nr = r + dr, nc = c + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || grid[nr][nc] === 1) continue;
+        const vk = cellKey(nr, nc);
+        const ng = dist[u] + cellCost(nr, nc);
+        if (ng < dist[vk]) dist[vk] = ng;
+      }
+    }
+    return dist[tk];
+  }
+
+  /* ==================== Build Step Trace ==================== */
+  function buildTrace() {
+    trueOptimalCost = computeExactOptimal();
+    const gMap = new Map();
+    const hMap = new Map();
+    const fMap = new Map();
+    const parent = new Map();
+    const closed = new Set();
+    const openSet = new Set();
+    // pq entries: { k, r, c, f, g, h, seq }
+    let pq = [];
+    let seq = 0;
+
+    const sk = cellKey(start.r, start.c);
+    const tk = cellKey(goal.r, goal.c);
+    const sh = heuristic(start.r, start.c, curAlgo);
+    const sf = calcPriority(0, sh, curAlgo);
+
+    gMap.set(sk, 0);
+    hMap.set(sk, sh);
+    fMap.set(sk, sf);
+    openSet.add(sk);
+    pq.push({ k: sk, r: start.r, c: start.c, f: sf, g: 0, h: sh, seq: seq++ });
+
+    const steps = [];
+    function snapshot(opts) {
+      // dedupe active open list for Top 8 PQ view
+      const activePQ = pq
+        .filter(item => !closed.has(item.k) && item.g === gMap.get(item.k))
+        .sort((a, b) => a.f - b.f || a.h - b.h || a.seq - b.seq);
+      steps.push({
+        open: new Set(openSet),
+        closed: new Set(closed),
+        gMap: new Map(gMap),
+        hMap: new Map(hMap),
+        fMap: new Map(fMap),
+        cur: opts.cur ?? -1,
+        relaxed: opts.relaxed ? new Set(opts.relaxed) : new Set(),
+        path: opts.path ? [...opts.path] : [],
+        line: opts.line,
+        msg: opts.msg,
+        msgCls: opts.msgCls || '',
+        pqTop: activePQ.slice(0, 8),
+        done: !!opts.done,
+        foundCost: opts.foundCost ?? null
+      });
+    }
+
+    snapshot({
+      cur: sk,
+      line: 2,
+      msg: `初始化【${ALGO_NAME[curAlgo]}】：起点 S(${start.r},${start.c}) 入队，g=0, h=${fmtNum(sh)}, f=${fmtNum(sf)}。`
+    });
+
+    const dirs = [[-1, 0], [0, 1], [1, 0], [0, -1]];
+    let found = false;
+
+    while (pq.length > 0) {
+      pq.sort((a, b) => a.f - b.f || a.h - b.h || a.seq - b.seq);
+      const u = pq.shift();
+      if (closed.has(u.k)) continue;
+
+      openSet.delete(u.k);
+      closed.add(u.k);
+
+      if (u.k === tk) {
+        const path = [];
+        let p = tk;
+        while (p !== undefined) {
+          path.push(p);
+          p = parent.get(p);
+        }
+        path.reverse();
+        const isOpt = u.g === trueOptimalCost;
+        snapshot({
+          cur: tk,
+          path,
+          line: 7,
+          done: true,
+          foundCost: u.g,
+          msgCls: isOpt ? 'ok' : 'warn',
+          msg: isOpt
+            ? `✓ 到达终点 T！总代价 = ${u.g}（全局最优），共扩展 ${closed.size} 个节点。`
+            : `⚠ 到达终点 T！路径代价 = ${u.g}，但全局最优为 ${trueOptimalCost}（多花了 ${u.g - trueOptimalCost}）！`
+        });
+        found = true;
+        break;
+      }
+
+      snapshot({
+        cur: u.k,
+        line: 6,
+        msg: `从 Open 堆顶弹出 (${u.r},${u.c})：f=${fmtNum(u.f)} (g=${u.g}, h=${fmtNum(u.h)})，加入 Closed。`
+      });
+
+      const relaxedList = [];
+      for (const [dr, dc] of dirs) {
+        const nr = u.r + dr, nc = u.c + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || grid[nr][nc] === 1) continue;
+        const vk = cellKey(nr, nc);
+        if (closed.has(vk)) continue;
+        const ng = u.g + cellCost(nr, nc);
+        if (!gMap.has(vk) || ng < gMap.get(vk)) {
+          const nh = heuristic(nr, nc, curAlgo);
+          const nf = calcPriority(ng, nh, curAlgo);
+          gMap.set(vk, ng);
+          hMap.set(vk, nh);
+          fMap.set(vk, nf);
+          parent.set(vk, u.k);
+          openSet.add(vk);
+          pq.push({ k: vk, r: nr, c: nc, f: nf, g: ng, h: nh, seq: seq++ });
+          relaxedList.push(vk);
+        }
+      }
+
+      if (relaxedList.length > 0) {
+        const names = relaxedList.map(k => `(${Math.floor(k / COLS)},${k % COLS})`).join('、');
+        snapshot({
+          cur: u.k,
+          relaxed: relaxedList,
+          line: 12,
+          msg: `扩展 (${u.r},${u.c}) 的邻居：松弛并入队 ${names}。`
+        });
+      }
+    }
+
+    if (!found) {
+      snapshot({
+        cur: -1,
+        line: 3,
+        done: true,
+        foundCost: Infinity,
+        msgCls: 'err',
+        msg: `✗ Open 集合已空，无法从起点到达终点 T（共扩展 ${closed.size} 个节点）。`
+      });
+    }
+
+    trace = steps;
+    stepIdx = 0;
+    const slider = document.getElementById('slider');
+    slider.max = Math.max(0, trace.length - 1);
+    slider.value = 0;
+    renderStep(0);
+  }
+
+  /* ==================== Grid DOM Construction ==================== */
+  const boardEl = document.getElementById('gridBoard');
+  const cellEls = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const div = document.createElement('div');
+      div.className = 'gcell';
+      div.dataset.r = r;
+      div.dataset.c = c;
+      div.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        isDrawing = true;
+        applyBrush(r, c);
+      });
+      div.addEventListener('pointerenter', () => {
+        updateHoverInfo(r, c);
+        if (isDrawing) applyBrush(r, c);
+      });
+      boardEl.appendChild(div);
+      cellEls.push(div);
+    }
+  }
+  window.addEventListener('pointerup', () => { isDrawing = false; });
+
+  function applyBrush(r, c) {
+    const isS = r === start.r && c === start.c;
+    const isT = r === goal.r && c === goal.c;
+    let changed = false;
+
+    if (curBrush === 'start') {
+      if (!isT && !isS) {
+        grid[r][c] = 0;
+        start = { r, c };
+        changed = true;
+      }
+    } else if (curBrush === 'goal') {
+      if (!isS && !isT) {
+        grid[r][c] = 0;
+        goal = { r, c };
+        changed = true;
+      }
+    } else if (!isS && !isT) {
+      const targetVal = curBrush === 'wall' ? 1 : (curBrush === 'swamp' ? 2 : 0);
+      if (grid[r][c] !== targetVal) {
+        grid[r][c] = targetVal;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      pause();
+      buildTrace();
+    }
+  }
+
+  function updateHoverInfo(r, c) {
+    const st = trace[stepIdx];
+    const k = cellKey(r, c);
+    const tName = (r === start.r && c === start.c) ? '起点 S'
+      : (r === goal.r && c === goal.c) ? '终点 T'
+      : grid[r][c] === 1 ? '障碍墙'
+      : grid[r][c] === 2 ? '泥潭 (代价 3)' : '空地 (代价 1)';
+    let extra = '';
+    if (st && st.gMap.has(k)) {
+      extra = ` | g=${st.gMap.get(k)}, h=${fmtNum(st.hMap.get(k))}, f=${fmtNum(st.fMap.get(k))}`;
+    } else if (grid[r][c] !== 1) {
+      extra = ` | 未访问, h=${fmtNum(heuristic(r, c, curAlgo))}`;
+    }
+    document.getElementById('hoverInfo').textContent = `格 (${r}, ${c}) · ${tName}${extra}`;
+  }
+
+  /* ==================== Render Snapshot ==================== */
+  function renderStep(idx) {
+    if (!trace.length) return;
+    stepIdx = Math.max(0, Math.min(idx, trace.length - 1));
+    const st = trace[stepIdx];
+    const pathSet = new Set(st.path);
+
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const k = cellKey(r, c);
+        const el = cellEls[k];
+        const isS = r === start.r && c === start.c;
+        const isT = r === goal.r && c === goal.c;
+        const t = grid[r][c];
+
+        let cls = 'gcell';
+        if (t === 1) cls += ' wall';
+        else if (t === 2) cls += ' swamp';
+
+        if (!isS && !isT && t !== 1) {
+          if (pathSet.has(k)) cls += ' path';
+          else if (st.closed.has(k)) cls += ' closed';
+          else if (st.open.has(k)) cls += ' open';
+        }
+        if (st.relaxed.has(k)) cls += ' relaxed';
+        if (st.cur === k && !st.done) cls += ' cur';
+        if (isS) cls += ' start';
+        if (isT) cls += ' goal';
+        el.className = cls;
+
+        if (isS) {
+          el.innerHTML = '<span class="c-tag">S</span>';
+        } else if (isT) {
+          el.innerHTML = '<span class="c-tag">T</span>';
+        } else if (t === 1) {
+          el.innerHTML = '';
+        } else {
+          let html = '';
+          if (t === 2) html += '<span class="c-swamp-mark">3</span>';
+          if (st.fMap.has(k)) {
+            html += `<span class="c-f">${fmtNum(st.fMap.get(k))}</span>`;
+            html += `<span class="c-sub">${st.gMap.get(k)}+${fmtNum(st.hMap.get(k))}</span>`;
+          }
+          el.innerHTML = html;
+        }
+      }
+    }
+
+    // Metrics
+    document.getElementById('mClosed').textContent = st.closed.size;
+    document.getElementById('mOpen').textContent = st.open.size;
+    const mCost = document.getElementById('mCost');
+    const mOpt = document.getElementById('mOpt');
+    const mOptCard = document.getElementById('mOptCard');
+    if (!st.done) {
+      mCost.textContent = '—';
+      mOpt.textContent = '搜索中…';
+      mOptCard.className = 'metric-card';
+    } else if (!isFinite(st.foundCost)) {
+      mCost.textContent = '∞';
+      mOpt.textContent = '不可达';
+      mOptCard.className = 'metric-card err';
+    } else {
+      mCost.textContent = st.foundCost;
+      if (st.foundCost === trueOptimalCost) {
+        mOpt.textContent = `✓ 最优 (${trueOptimalCost})`;
+        mOptCard.className = 'metric-card ok';
+      } else {
+        mOpt.textContent = `✗ 非最优 (+${st.foundCost - trueOptimalCost})`;
+        mOptCard.className = 'metric-card err';
+      }
+    }
+
+    // Message & slider
+    const msgEl = document.getElementById('stepMsg');
+    msgEl.textContent = st.msg;
+    msgEl.className = 'msg' + (st.msgCls ? ' ' + st.msgCls : '');
+    document.getElementById('slider').value = stepIdx;
+    document.getElementById('counter').textContent = `${stepIdx + 1} / ${trace.length}`;
+    document.getElementById('bFirst').disabled = stepIdx === 0;
+    document.getElementById('bPrev').disabled = stepIdx === 0;
+    document.getElementById('bNext').disabled = stepIdx === trace.length - 1;
+    document.getElementById('bLast').disabled = stepIdx === trace.length - 1;
+
+    // Pseudocode line highlight
+    pseudoEl.querySelectorAll('.line').forEach(ln => {
+      ln.classList.toggle('on', +ln.dataset.ln === st.line);
+    });
+
+    // Open PQ Top 8
+    const pqEl = document.getElementById('pqList');
+    if (st.pqTop.length === 0) {
+      pqEl.innerHTML = '<div class="empty">Open 优先队列为空</div>';
+    } else {
+      pqEl.innerHTML = st.pqTop.map((item, i) => `
+        <div class="pq-item${i === 0 ? ' top' : ''}">
+          <span class="pq-coord">${i === 0 ? '▶ ' : `#${i + 1} `}(${item.r}, ${item.c})</span>
+          <span class="pq-vals">
+            <span class="pq-f">f=${fmtNum(item.f)}</span>
+            <span>g=${item.g}</span>
+            <span>h=${fmtNum(item.h)}</span>
+          </span>
+        </div>
+      `).join('');
+    }
+  }
+
+  /* ==================== Playback Controls ==================== */
+  window.seek = (i) => renderStep(i);
+  window.stepBy = (delta) => { pause(); renderStep(stepIdx + delta); };
+
+  function play() {
+    if (stepIdx >= trace.length - 1) renderStep(0);
+    playing = true;
+    document.getElementById('bPlay').textContent = '⏸ 暂停';
+    clearInterval(playTimer);
+    playTimer = setInterval(() => {
+      if (stepIdx >= trace.length - 1) {
+        pause();
+      } else {
+        renderStep(stepIdx + 1);
+      }
+    }, stepDelay);
+  }
+
+  function pause() {
+    playing = false;
+    clearInterval(playTimer);
+    document.getElementById('bPlay').textContent = '▶ 播放';
+  }
+  window.pause = pause;
+  window.togglePlay = () => playing ? pause() : play();
+  window.updateSpeed = () => {
+    stepDelay = +document.getElementById('speedSel').value;
+    if (playing) play();
+  };
+
+  /* ==================== Keyboard Shortcuts ==================== */
+  document.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    else if (e.code === 'ArrowRight') { e.preventDefault(); stepBy(1); }
+    else if (e.code === 'ArrowLeft') { e.preventDefault(); stepBy(-1); }
+  });
+
+  /* ==================== Presets, Algo & Brush ==================== */
+  window.setAlgo = (algo) => {
+    curAlgo = algo;
+    document.querySelectorAll('#algoRow button').forEach(b => {
+      b.classList.toggle('active-chip', b.dataset.algo === algo);
+    });
+    pause();
+    buildTrace();
+  };
+
+  window.setBrush = (brush) => {
+    curBrush = brush;
+    document.querySelectorAll('#brushRow button').forEach(b => {
+      b.classList.toggle('active-chip', b.dataset.brush === brush);
+    });
+  };
+
+  window.toggleDetail = (on) => {
+    boardEl.classList.toggle('show-detail', on);
+  };
+
+  function clearGrid() {
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++) grid[r][c] = 0;
+  }
+
+  window.loadPreset = (name) => {
+    pause();
+    clearGrid();
+    if (name === 'u-trap') {
+      start = { r: 4, c: 2 };
+      goal = { r: 4, c: 10 };
+      // Classic U-shaped wall opening to the left
+      for (let r = 2; r <= 6; r++) grid[r][6] = 1;
+      for (let c = 4; c <= 6; c++) { grid[2][c] = 1; grid[6][c] = 1; }
+    } else if (name === 'maze') {
+      start = { r: 1, c: 1 };
+      goal = { r: 7, c: 11 };
+      const walls = [
+        [0,3],[1,3],[2,3],[3,3],[4,3],[5,3],
+        [3,6],[4,6],[5,6],[6,6],[7,6],[8,6],
+        [0,9],[1,9],[2,9],[3,9],[4,9],[5,9],
+        [7,2],[7,3],[7,4],[2,7],[2,8]
+      ];
+      for (const [r, c] of walls) grid[r][c] = 1;
+    } else if (name === 'swamp') {
+      start = { r: 4, c: 1 };
+      goal = { r: 4, c: 11 };
+      // Swamp block in the middle: straight path cost = 20, detour around cost = 14
+      for (let r = 3; r <= 5; r++)
+        for (let c = 4; c <= 8; c++) grid[r][c] = 2;
+    } else {
+      start = { r: 4, c: 2 };
+      goal = { r: 4, c: 10 };
+    }
+    buildTrace();
+  };
+
+  window.runDemo = (preset, algo, autoPlay) => {
+    loadPreset(preset);
+    setAlgo(algo);
+    if (autoPlay) play();
+  };
+
+  window.runDemoWithDetail = (preset, algo) => {
+    document.getElementById('detailChk').checked = true;
+    toggleDetail(true);
+    loadPreset(preset);
+    setAlgo(algo);
+    play();
+  };
+
+  /* ==================== Init ==================== */
+  loadPreset('u-trap');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>从零掌握单调栈与单调队列 — 交互式微课 · 实时动画 · 应用与实战</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root {
+  --bg: #EEF1F6;
+  --panel: #FFFFFF;
+  --sunk: #F5F7FA;
+  --ink: #18202E;
+  --muted: #5C6779;
+  --line: #D9DFE8;
+  --line-strong: #A9B3C3;
+  --accent: #2B57E0;
+  --accent-soft: #E1E8FC;
+  --on-accent: #FFFFFF;
+  --ok: #17905F;
+  --ok-soft: #DAF1E6;
+  --warn: #B8700C;
+  --warn-soft: #FBEBD2;
+  --err: #C93535;
+  --err-soft: #FCE4E4;
+  --purple: #7A42D9;
+  --purple-soft: #EFE6FD;
+  --skip: #96A0B2;
+  --kw: #8A3FC0;
+  --fn: #1D6FB0;
+  --cm: #7A8699;
+  --num: #C05621;
+  --c1: #0E9384; --c2: #7A5AF8; --c3: #D9456B; --c4: #6F8F1F;
+  --shadow: 0 2px 12px rgba(24, 32, 46, 0.06);
+  --font-ui: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-display: "Space Grotesk", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1219; --panel: #161C26; --sunk: #11161F; --ink: #E5EAF2; --muted: #93A0B4;
+    --line: #273041; --line-strong: #435069; --accent: #7C9BFF; --accent-soft: #1D2847; --on-accent: #0A1020;
+    --ok: #3FC58F; --ok-soft: #123326; --warn: #F0A53A; --warn-soft: #382810;
+    --err: #FF7676; --err-soft: #3A1A1E; --purple: #B894FF; --purple-soft: #281D42;
+    --skip: #5C667A; --kw: #C99BF5; --fn: #7DB8F0; --cm: #6E7B91; --num: #F6AD55;
+    --c1: #34C7B5; --c2: #A794FF; --c3: #F27A98; --c4: #A6C95A;
+    --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0E1219; --panel: #161C26; --sunk: #11161F; --ink: #E5EAF2; --muted: #93A0B4;
+  --line: #273041; --line-strong: #435069; --accent: #7C9BFF; --accent-soft: #1D2847; --on-accent: #0A1020;
+  --ok: #3FC58F; --ok-soft: #123326; --warn: #F0A53A; --warn-soft: #382810;
+  --err: #FF7676; --err-soft: #3A1A1E; --purple: #B894FF; --purple-soft: #281D42;
+  --skip: #5C667A; --kw: #C99BF5; --fn: #7DB8F0; --cm: #6E7B91; --num: #F6AD55;
+  --c1: #34C7B5; --c2: #A794FF; --c3: #F27A98; --c4: #A6C95A;
+  --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14.5px;
+  line-height: 1.72;
+}
+
+/* ==================== Topbar ==================== */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 11px; }
+.brand-badge {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  color: #fff; display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 700; font-size: 14px; flex: none;
+}
+.brand h1 { font-family: var(--font-display); font-size: 17px; margin: 0; line-height: 1.2; }
+.brand p { margin: 0; font-size: 11.5px; color: var(--muted); }
+
+.course-pills {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.lesson-pill {
+  border: 1px solid var(--line);
+  background: var(--sunk);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .15s;
+}
+.lesson-pill:hover { border-color: var(--accent); color: var(--ink); }
+.lesson-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.lesson-pill.done:not(.active) {
+  border-color: var(--ok);
+  color: var(--ok);
+  background: var(--ok-soft);
+}
+.top-right { display: flex; align-items: center; gap: 10px; }
+.progress-pill {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 7px;
+}
+.theme-btn {
+  background: var(--sunk); border: 1px solid var(--line-strong);
+  border-radius: 7px; padding: 5px 10px; font-size: 12.5px;
+  cursor: pointer; color: var(--ink); font-family: inherit;
+}
+.theme-btn:hover { border-color: var(--accent); }
+
+/* ==================== Main Split Classroom Layout ==================== */
+.classroom {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 18px 20px 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 1160px) {
+  .classroom { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+/* ==================== LEFT: Interactive Micro-Lesson ==================== */
+.lesson-pane { display: none; animation: fadeIn .22s ease; }
+.lesson-pane.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.lesson-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  display: inline-block;
+}
+.badge.blue { background: var(--accent-soft); color: var(--accent); }
+.badge.green { background: var(--ok-soft); color: var(--ok); }
+.badge.warn { background: var(--warn-soft); color: var(--warn); }
+.badge.purple { background: var(--purple-soft); color: var(--purple); }
+.badge.red { background: var(--err-soft); color: var(--err); }
+
+.lesson-title {
+  font-family: var(--font-display);
+  font-size: 23px;
+  line-height: 1.3;
+  margin: 0 0 12px;
+}
+.lesson-lead {
+  color: var(--muted);
+  font-size: 14.5px;
+  margin: 0 0 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lesson-body h3 {
+  font-family: var(--font-display);
+  font-size: 16.5px;
+  margin: 20px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lesson-body p { margin: 0 0 10px; }
+.lesson-body ul, .lesson-body ol { margin: 0 0 12px; padding-left: 20px; }
+.lesson-body li { margin-bottom: 6px; }
+
+.math { font-family: "Times New Roman", Georgia, serif; font-style: italic; font-size: 1.06em; }
+.code-inline {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.formula-box {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 14px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  margin: 12px 0;
+}
+
+.callout {
+  padding: 11px 14px;
+  border-radius: 9px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  margin: 12px 0;
+  font-size: 13.8px;
+}
+.callout.warn { border-left-color: var(--warn); background: color-mix(in srgb, var(--warn-soft) 45%, var(--sunk)); }
+.callout.ok { border-left-color: var(--ok); background: color-mix(in srgb, var(--ok-soft) 45%, var(--sunk)); }
+.callout.err { border-left-color: var(--err); background: color-mix(in srgb, var(--err-soft) 45%, var(--sunk)); }
+
+/* Action Card inside Lesson to drive Right Workbench */
+.try-card {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--panel));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.try-card .try-info { flex: 1 1 220px; }
+.try-card .try-title { font-weight: 700; font-size: 13.5px; color: var(--accent); margin-bottom: 2px; }
+.try-card .try-desc { font-size: 12.8px; color: var(--muted); }
+.try-btns { display: flex; gap: 7px; flex-wrap: wrap; }
+
+/* Inline SVG Diagrams inside Lesson */
+.diagram-box {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 12px 0;
+  text-align: center;
+}
+.diagram-box svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+.diagram-cap { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+/* Case Grid for Real-world Applications */
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+@media (max-width: 640px) { .case-grid { grid-template-columns: 1fr; } }
+.case-card {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.case-card h4 {
+  margin: 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.case-card p { margin: 0; font-size: 12.8px; color: var(--muted); }
+.case-card .case-model {
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+/* Quiz Box */
+.quiz-box {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+}
+.quiz-head {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--purple);
+  margin-bottom: 6px;
+}
+.quiz-q { font-weight: 600; font-size: 14px; margin-bottom: 10px; }
+.quiz-opts { display: flex; flex-direction: column; gap: 7px; }
+.quiz-opt {
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.quiz-opt:hover { border-color: var(--accent); }
+.quiz-opt.correct { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); font-weight: 600; }
+.quiz-opt.wrong { background: var(--err-soft); border-color: var(--err); color: var(--err); }
+.quiz-fb {
+  margin-top: 10px;
+  font-size: 13px;
+  padding: 8px 11px;
+  border-radius: 7px;
+  display: none;
+}
+.quiz-fb.show { display: block; }
+.quiz-fb.ok { background: var(--ok-soft); color: var(--ok); }
+.quiz-fb.err { background: var(--err-soft); color: var(--err); }
+
+/* Lesson Footer Nav */
+.lesson-footer {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Comparison Table */
+.table-wrap { overflow-x: auto; margin: 10px 0; }
+table.cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.cmp-table th, table.cmp-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+table.cmp-table th { background: var(--sunk); font-size: 11.5px; color: var(--muted); font-weight: 700; }
+
+/* Problem Tabs inside Lesson 6 */
+.prob-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+.prob-tab {
+  padding: 6px 12px; border-radius: 7px; border: 1px solid var(--line-strong);
+  background: var(--sunk); color: var(--muted); font-weight: 600; font-size: 12.8px; cursor: pointer;
+}
+.prob-tab.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.prob-pane { display: none; }
+.prob-pane.on { display: block; }
+.code-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  padding: 7px 12px; background: var(--sunk);
+  border: 1px solid var(--line); border-bottom: none;
+  border-radius: 8px 8px 0 0; font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+}
+pre.cpp-code {
+  margin: 0 0 12px; padding: 11px 13px; background: var(--sunk);
+  border: 1px solid var(--line); border-radius: 0 0 8px 8px;
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.56;
+  overflow-x: auto; max-height: 410px;
+}
+.kw { color: var(--kw); font-weight: 500; }
+.fnc { color: var(--fn); }
+.cm { color: var(--cm); font-style: italic; }
+.num { color: var(--num); }
+
+/* ==================== RIGHT: Sticky Interactive Workbench ==================== */
+.workbench-sticky {
+  position: sticky;
+  top: 70px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (max-width: 1160px) {
+  .workbench-sticky { position: static; }
+}
+
+.btn {
+  font-family: var(--font-ui); font-size: 12.5px; font-weight: 500;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 7px; padding: 6px 11px;
+  cursor: pointer; white-space: nowrap; transition: all .15s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); color: var(--on-accent); }
+.btn.sm { padding: 4px 9px; font-size: 12px; }
+.btn:disabled { opacity: 0.42; cursor: not-allowed; }
+
+input, select, textarea {
+  font-family: var(--font-mono); font-size: 12.5px;
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 7px; padding: 6px 9px; outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+/* Mode Switcher */
+.mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 4px;
+  margin-bottom: 10px;
+}
+.mode-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12.8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: var(--font-ui);
+}
+.mode-btn:hover { color: var(--ink); }
+.mode-btn.on {
+  background: var(--panel);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  box-shadow: 0 1px 4px rgba(24, 32, 46, 0.08);
+}
+
+.wb-controls {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.wb-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 220px; }
+.wb-field.narrow { flex: 0 0 92px; }
+.wb-field label { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 0.04em; }
+.wb-field input { width: 100%; }
+.wb-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.err-txt { color: var(--err); font-size: 12px; font-weight: 600; }
+
+/* Bar Chart Canvas */
+.graph-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.graph-head-title { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+.legend { display: flex; gap: 8px; flex-wrap: wrap; }
+.legend span { display: inline-flex; align-items: center; gap: 4px; font-size: 11.2px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid; }
+.lg-stk { background: var(--accent-soft); border-color: var(--accent); }
+.lg-pop { background: var(--warn-soft); border-color: var(--warn); }
+.lg-ok { background: var(--ok-soft); border-color: var(--ok); }
+.lg-exp { background: var(--sunk); border-color: var(--skip); border-style: dashed; }
+
+.canvas-box {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 4px 4px;
+}
+#chart { display: block; width: 100%; height: auto; margin: 0 auto; user-select: none; }
+#chart text { font-family: var(--font-mono); }
+
+/* Step Message & Playback */
+.step-box {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 12px;
+}
+.msg { font-size: 13.5px; line-height: 1.5; min-height: 22px; }
+.msg.pop { color: var(--warn); font-weight: 500; }
+.msg.exp { color: var(--err); font-weight: 500; }
+.msg.ans, .msg.end { color: var(--ok); font-weight: 600; }
+
+.tl-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.tl-row button { padding: 4px 9px; font-family: var(--font-mono); font-size: 12px; }
+#slider { flex: 1 1 120px; accent-color: var(--accent); padding: 0; border: none; background: none; box-shadow: none; }
+.counter { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); font-size: 11.5px; min-width: 56px; text-align: right; }
+
+/* Live Stack / Deque Container */
+.struct-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.struct-title { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: 0.04em; }
+.struct-hint { font-size: 11.5px; color: var(--muted); font-family: var(--font-mono); }
+.struct-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 8px 10px;
+  min-height: 54px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.struct-end {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px dashed var(--line-strong);
+  border-radius: 5px;
+  padding: 3px 6px;
+  flex: none;
+}
+.pill-node {
+  flex: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 54px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  border: 1.5px solid var(--accent);
+  background: var(--accent-soft);
+  font-family: var(--font-mono);
+  transition: all .18s;
+}
+.pill-node .p-val { font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+.pill-node .p-idx { font-size: 10px; color: var(--muted); line-height: 1.1; }
+.pill-node.is-front { border-color: var(--ok); background: var(--ok-soft); }
+.pill-node.is-front .p-val { color: var(--ok); }
+.pill-node.is-top { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+.pill-node.is-new { background: var(--accent); border-color: var(--accent); }
+.pill-node.is-new .p-val, .pill-node.is-new .p-idx { color: var(--on-accent); }
+.pill-node.is-pop { background: var(--warn-soft); border-color: var(--warn); border-style: dashed; }
+.pill-node.is-pop .p-val { color: var(--warn); }
+.pill-node.is-exp { background: var(--err-soft); border-color: var(--err); border-style: dashed; }
+.pill-node.is-exp .p-val { color: var(--err); }
+.stkempty { color: var(--skip); font-family: var(--font-mono); font-size: 12px; padding: 4px 6px; }
+
+/* Arrays & Complexity Stats */
+.arow { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 6px; align-items: center; }
+.arow + .arow { margin-top: 6px; }
+.aname { font-family: var(--font-mono); font-weight: 700; font-size: 12px; color: var(--muted); }
+.cells { display: flex; gap: 4px; overflow-x: auto; padding: 1px 1px 3px; }
+.cell {
+  flex: none; min-width: 36px; border: 1px solid var(--line); border-radius: 5px;
+  background: var(--sunk); text-align: center; font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums; padding: 2px 4px; transition: background .2s, border-color .2s;
+}
+.cell i { display: block; font-style: normal; font-size: 9px; color: var(--skip); line-height: 1.1; }
+.cell b { font-size: 12px; font-weight: 600; }
+.cell.zero b { color: var(--skip); font-weight: 400; }
+.cell.cur { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.cell.cur i { color: var(--on-accent); }
+.cell.changed { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
+.cell.changed i { color: var(--ok); }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+@media (max-width: 600px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stat-card {
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 9px;
+  text-align: center;
+}
+.stat-card .s-k { font-size: 11px; color: var(--muted); }
+.stat-card .s-v { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--ink); margin-top: 2px; }
+.stat-card.ok { border-color: var(--ok); background: var(--ok-soft); }
+.stat-card.ok .s-v { color: var(--ok); }
+
+/* Bottom Debugger Tabs */
+.dbg-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 8px; }
+.dbg-tab {
+  border: 1px solid var(--line); background: var(--sunk); color: var(--muted);
+  border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.dbg-tab.on { background: var(--accent-soft); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.dbg-pane { display: none; }
+.dbg-pane.on { display: block; }
+
+.code {
+  background: var(--sunk); border: 1px solid var(--line); border-radius: 8px;
+  padding: 4px 0; font-family: var(--font-mono); font-size: 11.8px; line-height: 1.56; overflow-x: auto;
+}
+.line { display: flex; white-space: pre; padding-right: 10px; border-left: 3px solid transparent; }
+.line .ln { width: 26px; flex: none; text-align: right; padding-right: 8px; color: var(--skip); user-select: none; }
+.line.on { background: var(--accent-soft); border-left-color: var(--accent); font-weight: 500; }
+.line.on .ln { color: var(--accent); }
+
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: var(--panel); padding: 7px 16px; border-radius: 999px;
+  font-size: 13px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 90;
+}
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-badge">栈</div>
+      <div>
+        <h1>单调栈与单调队列</h1>
+        <p>边学边演的交互式微课 · O(n) 解决下一个更大元素与滑动窗口极值</p>
+      </div>
+    </div>
+
+    <div class="course-pills" id="courseNav">
+      <button class="lesson-pill active" onclick="goLesson(0)">1. 暴力的瓶颈</button>
+      <button class="lesson-pill" onclick="goLesson(1)">2. 单调栈核心</button>
+      <button class="lesson-pill" onclick="goLesson(2)">3. 柱状图与接雨水</button>
+      <button class="lesson-pill" onclick="goLesson(3)">4. 单调队列滑窗</button>
+      <button class="lesson-pill" onclick="goLesson(4)">5. 实际应用案例</button>
+      <button class="lesson-pill" onclick="goLesson(5)">6. 实战题解</button>
+    </div>
+
+    <div class="top-right">
+      <a class="theme-btn" href="../../index.html" style="text-decoration:none;">← 目录</a>
+      <span class="progress-pill" id="progressText">进度 1/6</span>
+      <button class="theme-btn" id="themeToggle" title="切换浅色/深色主题">🌓 主题</button>
+    </div>
+  </div>
+</header>
+
+<main class="classroom">
+
+  <!-- ==================== 左栏：沉浸式交互微课 ==================== -->
+  <section class="panel" id="lessonContainer">
+
+    <!-- ===== 第 1 课 ===== -->
+    <article class="lesson-pane active" id="lesson-0">
+      <div class="lesson-eyebrow"><span class="badge blue">第 1 课 · 动机与直觉</span> <span>约 3 分钟</span></div>
+      <h2 class="lesson-title">暴力的瓶颈：如何一眼找到“下一个更大元素”？</h2>
+      <p class="lesson-lead">一排人从左到右站队，每个人都向右看，想知道<strong>第一个比自己高的人站在几号位</strong>。如果每人挨个往右数，数据一大就会瞬间超时。</p>
+
+      <div class="lesson-body">
+        <h3>1. 经典问题：下一个更大元素（Next Greater Element）</h3>
+        <p>给定长度为 <span class="math">n</span> 的数组 <span class="code-inline">a[1..n]</span>，对每个下标 <span class="math">i</span>，求它右侧<strong>第一个严格大于</strong> <span class="code-inline">a[i]</span> 的元素下标 <span class="math">j</span>（不存在则记为 <span class="code-inline">0</span>）。</p>
+        <ul>
+          <li><strong>暴力写法</strong>：外层枚举 <span class="math">i</span>，内层从 <span class="math">i + 1</span> 往右扫描直到遇到第一个更大的数。最坏情况（数组严格递减）要做 <span class="math">n</span>(<span class="math">n</span> &minus; 1) / 2 次比较，复杂度 <span class="math">O</span>(<span class="math">n</span><sup>2</sup>)。</li>
+          <li><strong>现实瓶颈</strong>：在洛谷模板题 P5788 中，<span class="math">n</span> &le; 3 &times; 10<sup>6</sup>，<span class="math">O</span>(<span class="math">n</span><sup>2</sup>) 需要近 10<sup>13</sup> 次运算，直接 TLE！</li>
+        </ul>
+
+        <h3>2. 破局的瞬间：谁注定被“永远淘汰”？</h3>
+        <div class="callout ok">
+          <strong>核心直觉（淘汰法则）：</strong><br>
+          如果前面有个<strong>更矮且更早</strong>的人被你挡住了，它<strong>永远不可能</strong>成为后面任何人的答案——直接淘汰！<br>
+          换个角度从左往右看：当身高为 5 的人入场时，前面还在苦苦等待的 1 和 2 瞬间找到了答案（就是 5！），它们<strong>任务完成，立刻出局</strong>，后面的人再也不用回头看它们了。
+        </div>
+
+        <div class="diagram-box">
+          <svg viewBox="0 0 540 165" width="520" height="160">
+            <defs>
+              <marker id="d1-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="var(--warn)"/>
+              </marker>
+            </defs>
+            <rect x="8" y="8" width="524" height="148" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+            <line x1="36" y1="126" x2="504" y2="126" stroke="var(--line-strong)" stroke-width="1.5"/>
+            <!-- Bars: 2, 1, 5, 6, 2, 3 -->
+            <rect x="58" y="96" width="38" height="30" rx="4" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.8"/>
+            <text x="77" y="90" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--warn)">2</text>
+            <text x="77" y="142" text-anchor="middle" font-size="10.5" fill="var(--muted)">i=1</text>
+
+            <rect x="128" y="111" width="38" height="15" rx="4" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.8"/>
+            <text x="147" y="105" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--warn)">1</text>
+            <text x="147" y="142" text-anchor="middle" font-size="10.5" fill="var(--muted)">i=2</text>
+
+            <rect x="198" y="51" width="38" height="75" rx="4" fill="var(--accent)" stroke="var(--accent)" stroke-width="2"/>
+            <text x="217" y="45" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--accent)">5 (当前)</text>
+            <text x="217" y="142" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--accent)">i=3</text>
+
+            <rect x="278" y="36" width="38" height="90" rx="4" fill="var(--sunk)" stroke="var(--line-strong)" stroke-width="1.5"/>
+            <text x="297" y="30" text-anchor="middle" font-size="11.5" fill="var(--muted)">6</text>
+            <text x="297" y="142" text-anchor="middle" font-size="10.5" fill="var(--muted)">i=4</text>
+
+            <rect x="358" y="96" width="38" height="30" rx="4" fill="var(--sunk)" stroke="var(--line-strong)" stroke-width="1.5"/>
+            <text x="377" y="90" text-anchor="middle" font-size="11.5" fill="var(--muted)">2</text>
+            <text x="377" y="142" text-anchor="middle" font-size="10.5" fill="var(--muted)">i=5</text>
+
+            <rect x="438" y="81" width="38" height="45" rx="4" fill="var(--sunk)" stroke="var(--line-strong)" stroke-width="1.5"/>
+            <text x="457" y="75" text-anchor="middle" font-size="11.5" fill="var(--muted)">3</text>
+            <text x="457" y="142" text-anchor="middle" font-size="10.5" fill="var(--muted)">i=6</text>
+
+            <!-- Dashed arrows showing 1 and 2 popped by 5 -->
+            <path d="M147,96 Q178,68 202,60" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#d1-ar)"/>
+            <path d="M77,80 Q138,34 200,52" fill="none" stroke="var(--warn)" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#d1-ar)"/>
+            <text x="135" y="30" text-anchor="middle" font-size="11" font-weight="700" fill="var(--warn)">1 和 2 都被 5 弹出，ans 均记为 3！</text>
+          </svg>
+          <div class="diagram-cap">当更大的数 5 到来时，前面比它矮的 1、2 立刻结算答案并出栈，绝不拖泥带水</div>
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 1：亲眼看“被挡住的元素”如何瞬间结算</div>
+            <div class="try-desc">右侧已加载经典波形数组 <span class="code-inline">[2, 1, 5, 6, 2, 3, 4, 1]</span>。点击播放，观察当 <span class="code-inline">5</span> 和 <span class="code-inline">6</span> 入场时，橙色虚线箭头如何帮前面更矮的柱子瞬间定格答案。</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="lessonDemo('stackWave')">▶ 从头播放示例</button>
+            <button class="btn sm" onclick="lessonDemo('stackEnd')">⏭ 直接看最终结果</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="q0">
+          <div class="quiz-head">随堂小测 · 检查理解</div>
+          <div class="quiz-q">在寻找“右侧第一个更大元素”时，为什么当 <span class="code-inline">a[i]</span> 弹出栈顶元素 <span class="code-inline">x</span> 后，我们可以彻底把 <span class="code-inline">x</span> 扔掉？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q0', false, this, '不对哦！x 并不是没用，而是它已经拿到了自己唯一的正确答案 ans[x] = i，后续元素再也不需要管 x 了。')">A. 因为 x 太小了，它没有资格拥有答案</button>
+            <button class="quiz-opt" onclick="answerQuiz('q0', true, this, '完全正确！x 右侧第一个比它大的元素已经确定就是 i，x 的任务彻底完成，无需再留在候补队列里浪费比较次数。')">B. 因为 x 的答案已经确定为 i，它已经结算完毕，后面不再需要它</button>
+          </div>
+          <div class="quiz-fb" id="fb-q0"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <span style="color:var(--muted); font-size:12.5px;">第 1 / 6 课</span>
+        <button class="btn primary" onclick="goLesson(1)">下一课：单调栈核心与 O(n) 证明 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 2 课 ===== -->
+    <article class="lesson-pane" id="lesson-1">
+      <div class="lesson-eyebrow"><span class="badge blue">第 2 课 · 核心机制与复杂度</span> <span>约 4 分钟</span></div>
+      <h2 class="lesson-title">单调栈核心与严格 <span class="math">O</span>(<span class="math">n</span>) 势能证明</h2>
+      <p class="lesson-lead">把“还没找到答案的人”放进一个栈 <span class="code-inline">stk</span> 里。为了保证不被跳过，栈里从底到顶的身高天然保持<strong>单调不增（单调递减）</strong>！</p>
+
+      <div class="lesson-body">
+        <h3>1. 为什么栈里存的是“下标”而不是“数值”？</h3>
+        <ul>
+          <li>我们最终要填写 <span class="code-inline">ans[stk.top()] = i</span>，必须知道被弹出元素原来的位置下标。</li>
+          <li>有了下标 <span class="code-inline">idx</span>，随时可以通过 <span class="code-inline">a[idx]</span> 拿到数值，还能计算距离 <span class="code-inline">i &minus; idx</span>，一举两得！</li>
+        </ul>
+
+        <h3>2. 核心 4 行模板（从左到右扫描）</h3>
+        <div class="formula-box">
+          while (!stk.empty() &amp;&amp; a[i] &gt; a[stk.top()]) { ans[stk.top()] = i; stk.pop(); }<br>
+          stk.push(i);
+        </div>
+        <p><strong>维护不变式</strong>：每当新元素 <span class="code-inline">a[i]</span> 进栈前，所有比它严格小的栈顶都会被弹走。因此压入 <span class="code-inline">i</span> 之后，栈从底到顶必然满足 <span class="code-inline">a[stk[0]] &ge; a[stk[1]] &ge; ... &ge; a[stk.top()]</span>。</p>
+
+        <h3>3. 新手最疑惑：for 里面套 while，为什么不是 <span class="math">O</span>(<span class="math">n</span><sup>2</sup>)？</h3>
+        <div class="callout ok">
+          <strong>势能 / 摊还分析（一句话秒懂）：</strong><br>
+          盯着每一个下标 <span class="math">k</span> 的一生：它在整个算法中<strong>最多入栈 1 次</strong>（在 <span class="code-inline">i = k</span> 时），也<strong>最多出栈 1 次</strong>（一旦被弹出就永不回头）！<br>
+          因此所有 <span class="code-inline">while</span> 循环加起来的总弹出次数绝不会超过 <span class="math">n</span> 次，总栈操作次数满足：<br>
+          <strong>总入栈 + 总出栈 &le; 2<span class="math">n</span> &rArr; 严格线性时间 <span class="math">O</span>(<span class="math">n</span>)！</strong>
+        </div>
+
+        <h3>4. 一张表掌握单调栈四大变形</h3>
+        <div class="table-wrap">
+          <table class="cmp-table">
+            <thead><tr><th>查询目标</th><th>栈内单调性（底 &rarr; 顶）</th><th>弹栈条件</th></tr></thead>
+            <tbody>
+              <tr><td><strong>右侧第一个更大</strong></td><td>单调递减（不增）</td><td><span class="code-inline">a[i] &gt; a[stk.top()]</span></td></tr>
+              <tr><td><strong>右侧第一个更小</strong></td><td>单调递增（不减）</td><td><span class="code-inline">a[i] &lt; a[stk.top()]</span></td></tr>
+              <tr><td><strong>左侧第一个更大</strong></td><td>单调递减（不增）</td><td><span class="code-inline">a[stk.top()] &le; a[i]</span> 弹出，新栈顶即答案</td></tr>
+              <tr><td><strong>左侧第一个更小</strong></td><td>单调递增（不减）</td><td><span class="code-inline">a[stk.top()] &ge; a[i]</span> 弹出，新栈顶即答案</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 2：用极端数据验证“操作总数 &le; 2n”</div>
+            <div class="try-desc">试试加载<strong>严格递增</strong>或<strong>严格递减</strong>序列，然后切到右侧底部的“结果数组与复杂度统计”标签页，观察入栈+出栈总数是否始终被锁死在 2<span class="math">n</span> 以内！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="lessonDemo('stackInc')">▶ 递增序列</button>
+            <button class="btn sm" onclick="lessonDemo('stackDec')">▶ 递减序列</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="q1">
+          <div class="quiz-head">随堂小测 · 检查理解</div>
+          <div class="quiz-q">如果输入数组长度 <span class="math">n</span> = 1000，单调栈算法执行完毕后，整个过程中的 <span class="code-inline">stk.pop()</span> 最多被执行了多少次？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q1', false, this, '不会达到 n²！虽然某一次 while 可能连续弹出很多元素，但弹掉的元素再也不会进栈，所以总弹出次数不可能超过总入栈次数。')">A. 最多 1000 &times; 999 / 2 次</button>
+            <button class="quiz-opt" onclick="answerQuiz('q1', true, this, '完全正确！一共只有 1000 个元素进过栈，最后一个元素绝不会被弹出，因此 pop() 最多只会被执行 999 次（严格小于 n 次）。')">B. 最多 999 次（每个元素最多出栈 1 次）</button>
+          </div>
+          <div class="quiz-fb" id="fb-q1"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(0)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(2)">下一课：柱状图与接雨水 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 3 课 ===== -->
+    <article class="lesson-pane" id="lesson-2">
+      <div class="lesson-eyebrow"><span class="badge purple">第 3 课 · 经典变形</span> <span>约 4 分钟</span></div>
+      <h2 class="lesson-title">一趟扫描定左右边界：柱状图最大矩形与接雨水</h2>
+      <p class="lesson-lead">单调栈最惊艳的技巧在于：<strong>当元素 <span class="code-inline">mid</span> 被弹出的那一瞬间，它左边和右边的第一个“挡板”竟然同时现身了！</strong></p>
+
+      <div class="lesson-body">
+        <h3>1. 柱状图中最大的矩形（LeetCode 84）</h3>
+        <p>枚举每根柱子 <span class="code-inline">mid</span> 作为矩形的高度 <span class="code-inline">h[mid]</span>，它最多能向左延伸到“左边第一个比它矮的柱子 <span class="code-inline">L</span>”，向右延伸到“右边第一个比它矮的柱子 <span class="code-inline">R</span>”。</p>
+        <ul>
+          <li>维护一个<strong>单调递增栈</strong>。当新柱子 <span class="code-inline">h[i] &lt; h[stk.top()]</span> 时，弹出栈顶 <span class="code-inline">mid</span>：</li>
+          <li><strong>右边界 <span class="code-inline">R = i</span></strong>（正是它把 <span class="code-inline">mid</span> 弹出来的！）；</li>
+          <li><strong>左边界 <span class="code-inline">L = stk.top()</span></strong>（弹完 <span class="code-inline">mid</span> 后的新栈顶，因为栈递增，它就是左边第一个比 <span class="code-inline">h[mid]</span> 矮的柱子！）。</li>
+          <li><strong>矩形面积</strong>：<span class="code-inline">h[mid] &times; (R &minus; L &minus; 1)</span>。在数组头尾各加一个高度为 <span class="code-inline">0</span> 的<strong>哨兵</strong>，就能省去所有判空和收尾特判！</li>
+        </ul>
+
+        <div class="diagram-box">
+          <svg viewBox="0 0 540 165" width="520" height="160">
+            <rect x="8" y="8" width="524" height="148" rx="10" fill="var(--panel)" stroke="var(--line)"/>
+            <line x1="34" y1="130" x2="506" y2="130" stroke="var(--line-strong)" stroke-width="1.5"/>
+            <!-- Histogram: 2, 1, 5, 6, 2, 3 -->
+            <rect x="52" y="102" width="46" height="28" rx="3" fill="var(--sunk)" stroke="var(--line-strong)"/>
+            <text x="75" y="96" text-anchor="middle" font-size="11" fill="var(--muted)">2</text>
+
+            <rect x="112" y="116" width="46" height="14" rx="3" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.8"/>
+            <text x="135" y="110" text-anchor="middle" font-size="11" font-weight="700" fill="var(--warn)">L=1</text>
+
+            <rect x="172" y="60" width="46" height="70" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.8"/>
+            <text x="195" y="54" text-anchor="middle" font-size="11" font-weight="700" fill="var(--accent)">5 (mid)</text>
+
+            <rect x="232" y="46" width="46" height="84" rx="3" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+            <text x="255" y="40" text-anchor="middle" font-size="11" fill="var(--accent)">6</text>
+
+            <rect x="292" y="102" width="46" height="28" rx="3" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.8"/>
+            <text x="315" y="96" text-anchor="middle" font-size="11" font-weight="700" fill="var(--warn)">R=2</text>
+
+            <rect x="352" y="88" width="46" height="42" rx="3" fill="var(--sunk)" stroke="var(--line-strong)"/>
+            <text x="375" y="82" text-anchor="middle" font-size="11" fill="var(--muted)">3</text>
+
+            <!-- Highlight max rectangle 5 x 2 = 10 -->
+            <rect x="172" y="60" width="106" height="70" rx="3" fill="color-mix(in srgb, var(--ok) 25%, transparent)" stroke="var(--ok)" stroke-width="2.2" stroke-dasharray="5 3"/>
+            <text x="225" y="98" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ok)">面积 = 5 × 2 = 10</text>
+            <text x="454" y="74" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">宽 = R − L − 1</text>
+            <text x="454" y="92" text-anchor="middle" font-size="11" fill="var(--muted)">= 5 − 2 − 1 = 2</text>
+          </svg>
+          <div class="diagram-cap">当柱子 5 被右侧更矮的 2 弹出时，新栈顶 1 是左边界，2 是右边界，最大矩形 5 &times; 2 = 10 瞬间算出</div>
+        </div>
+
+        <h3>2. 接雨水（LeetCode 42）——按“行”横向蓄水</h3>
+        <p>反过来，维护一个<strong>单调递减栈</strong>！当新柱子 <span class="code-inline">h[i] &gt; h[stk.top()]</span> 时，说明右侧出现了一堵高墙，形成了一个“凹槽”：</p>
+        <ul>
+          <li>弹出栈顶 <span class="code-inline">mid</span> 作为<strong>凹槽底部</strong>；</li>
+          <li>如果栈非空，新的栈顶 <span class="code-inline">left = stk.top()</span> 就是<strong>左墙</strong>，当前 <span class="code-inline">i</span> 是<strong>右墙</strong>；</li>
+          <li>这一层能接住的雨水面积 = <span class="code-inline">(min(h[left], h[i]) &minus; h[mid]) &times; (i &minus; left &minus; 1)</span>。</li>
+        </ul>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 3：加载 LeetCode 84 与 接雨水 经典地形</div>
+            <div class="try-desc">把经典波形 <span class="code-inline">[2, 1, 5, 6, 2, 3]</span> 或凹槽地形 <span class="code-inline">[4, 2, 0, 3, 2, 5]</span> 加载到右侧画布，体会栈顶与当前元素如何构成“左墙-坑底-右墙”！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="lessonDemo('lc84')">▶ 加载 [2,1,5,6,2,3]</button>
+            <button class="btn sm" onclick="lessonDemo('lc42')">▶ 加载接雨水地形</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="q2">
+          <div class="quiz-head">随堂小测 · 检查理解</div>
+          <div class="quiz-q">求解“柱状图中最大的矩形（LeetCode 84）”时，我们需要找每根柱子左右两侧<strong>第一个比它矮</strong>的柱子，应该维护哪种单调栈？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q2', true, this, '完全正确！维护单调递增栈：遇到比栈顶更矮的柱子时触发弹栈，当前柱子就是右边界，弹栈后的新栈顶就是左边界。')">A. 单调递增栈（遇到更矮的柱子时弹栈结算）</button>
+            <button class="quiz-opt" onclick="answerQuiz('q2', false, this, '单调递减栈是在遇到更高的柱子时弹栈，适合找“下一个更大元素”或接雨水，而不是找两侧第一个更矮的柱子。')">B. 单调递减栈（遇到更高的柱子时弹栈结算）</button>
+          </div>
+          <div class="quiz-fb" id="fb-q2"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(1)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(3)">下一课：单调队列与滑动窗口 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 4 课 ===== -->
+    <article class="lesson-pane" id="lesson-3">
+      <div class="lesson-eyebrow"><span class="badge warn">第 4 课 · 双端队列升级</span> <span>约 4 分钟</span></div>
+      <h2 class="lesson-title">单调队列：<span class="math">O</span>(1) 拿下滑动窗口最大值</h2>
+      <p class="lesson-lead">如果题目要求维护长度为 <span class="math">k</span> 的滑动窗口 <span class="code-inline">[i &minus; k + 1, i]</span> 内的最大值，光靠栈就不够了——因为<strong>左边的老元素会“过期滑出窗口”</strong>！</p>
+
+      <div class="lesson-body">
+        <h3>1. 为什么栈不够，需要双端队列 <span class="code-inline">deque</span>？</h3>
+        <p>在滑动窗口中，候选冠军面临<strong>两种淘汰</strong>：</p>
+        <ol>
+          <li><strong>队头过期淘汰（出界了）</strong>：如果队头下标 <span class="code-inline">dq.front() &le; i &minus; k</span>，说明它已经掉出当前窗口，必须从<strong>队头</strong>弹出 <span class="code-inline">dq.pop_front()</span>。</li>
+          <li><strong>队尾能力淘汰（又老又弱）</strong>：如果队尾元素 <span class="code-inline">a[dq.back()] &le; a[i]</span>，它既比新来的 <span class="code-inline">i</span> 小、又比 <span class="code-inline">i</span> 更早过期，<strong>永无出头之日</strong>，直接从<strong>队尾</strong>踢走 <span class="code-inline">dq.pop_back()</span>！</li>
+        </ol>
+
+        <div class="formula-box">
+          1. 队头去过期：while (!dq.empty() &amp;&amp; dq.front() &le; i - k) dq.pop_front();<br>
+          2. 队尾去更弱：while (!dq.empty() &amp;&amp; a[dq.back()] &le; a[i]) dq.pop_back();<br>
+          3. 新人进队尾：dq.push_back(i); &nbsp;&nbsp; 4. 队头即答案：ans[i] = a[dq.front()];
+        </div>
+
+        <div class="callout ok">
+          <strong>队头为什么一定是窗口最大值？</strong><br>
+          经过上述维护，双端队列从头到尾的下标<strong>严格递增</strong>（都没过期），对应的数值<strong>严格递减</strong>。所以 <strong><span class="code-inline">dq.front()</span> 永远是当前窗口里的绝对老大</strong>，查询只需 <span class="math">O</span>(1)！且每个元素依然最多入队 1 次、出队 1 次，总时间严格 <span class="math">O</span>(<span class="math">n</span>)。
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 4：切换到“单调队列”模式看双端淘汰</div>
+            <div class="try-desc">点击按钮，右侧立刻切换为<strong>单调队列（滑动窗口最大值）</strong>模式，加载 LeetCode 239 经典样例 <span class="code-inline">[1, 3, -1, -3, 5, 3, 6, 7], k = 3</span>，观察浅色窗口框如何滑动、队头如何过期、队尾如何踢人！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="lessonDemo('dequeLC239')">▶ 演示滑动窗口 (k=3)</button>
+            <button class="btn sm" onclick="lessonDemo('dequeWave')">▶ 演示正数波形 (k=3)</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="q3">
+          <div class="quiz-head">随堂小测 · 检查理解</div>
+          <div class="quiz-q">在求“滑动窗口最大值”的单调队列中，<strong>队头（front）</strong>和<strong>队尾（back）</strong>分别负责处理什么？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q3', true, this, '完全正确！队头存的是最早入队的最大值，只负责检查是否滑出窗口（过期）；队尾负责把比新元素更弱的老元素踢掉，并接收新元素。')">A. 队头弹出“已滑出窗口的过期下标”；队尾弹出“比当前值更小的弱元素”并压入新下标</button>
+            <button class="quiz-opt" onclick="answerQuiz('q3', false, this, '反过来就不行了：新元素必须从队尾进入并淘汰前面更弱的，最早的冠军位于队头，所以过期检查一定在队头。')">B. 队头压入新元素；队尾负责弹出过期元素</button>
+          </div>
+          <div class="quiz-fb" id="fb-q3"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(2)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(4)">下一课：实际应用案例 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 5 课 ===== -->
+    <article class="lesson-pane" id="lesson-4">
+      <div class="lesson-eyebrow"><span class="badge green">第 5 课 · 工程与算法建模</span> <span>约 3 分钟</span></div>
+      <h2 class="lesson-title">单调栈与单调队列的四大真实应用场景</h2>
+      <p class="lesson-lead">看似简单的“维护单调性”，在金融量化、运维监控、图形排版与动态规划加速中无处不在。</p>
+
+      <div class="lesson-body">
+        <div class="case-grid">
+          <div class="case-card">
+            <h4>1. 股票价格跨度与回撤周期 <span class="badge blue">单调栈</span></h4>
+            <p>量化看板需要实时计算“今天股价连续多少天高于或等于此前价格”（Online Stock Span，LeetCode 901）。</p>
+            <div class="case-model"><strong>建模：</strong>维护单调递减栈，弹出所有 <span class="code-inline">&le; 今日股价</span> 的历史记录并累加其跨度，每个交易日摊还 <span class="math">O</span>(1) 完成。</div>
+          </div>
+
+          <div class="case-card">
+            <h4>2. 实时流数据滑动窗口峰值监控 <span class="badge warn">单调队列</span></h4>
+            <p>网关限流、Prometheus / APM 监控需要每秒汇报“最近 60 秒内的最大延迟或最高 QPS 峰值”。</p>
+            <div class="case-model"><strong>建模：</strong>用单调递减双端队列缓存 <span class="code-inline">(timestamp, value)</span>，队头按时间窗口过期，队尾淘汰低峰，每条日志 <span class="math">O</span>(1) 实时出峰值。</div>
+          </div>
+
+          <div class="case-card">
+            <h4>3. 图像处理与布局引擎最大空白矩形 <span class="badge purple">单调栈</span></h4>
+            <p>在 OCR 版面分析、广告位排布或二值掩码图中，寻找面积最大的连续可用空白矩形（LeetCode 85）。</p>
+            <div class="case-model"><strong>建模：</strong>逐行向上累加连续空白高度，把二维矩阵拆成 <span class="math">R</span> 个柱状图，每行跑一遍单调递增栈，总耗时 <span class="math">O</span>(<span class="math">R</span> &times; <span class="math">C</span>)。</div>
+          </div>
+
+          <div class="case-card">
+            <h4>4. DP 转移优化：多重背包与区间 DP <span class="badge green">单调队列</span></h4>
+            <p>当状态转移形如 <span class="code-inline">dp[i] = max(dp[j] + w)</span> 且决策点 <span class="math">j</span> 落在固定长度滑窗内时，直接转移需 <span class="math">O</span>(<span class="math">nk</span>)。</p>
+            <div class="case-model"><strong>建模：</strong>用单调队列维护滑窗内最优决策点 <span class="math">j</span>，将多重背包或定长子段和 DP 的复杂度直接压低一维至 <span class="math">O</span>(<span class="math">n</span>)！</div>
+          </div>
+        </div>
+
+        <div class="try-card">
+          <div class="try-info">
+            <div class="try-title">🧪 微实验 5：模拟服务器 QPS 流量尖峰监控</div>
+            <div class="try-desc">加载一段模拟服务器每秒 QPS 波动的数据 <span class="code-inline">[42, 35, 68, 54, 80, 61, 45, 73]</span>，设置窗口 <span class="code-inline">k = 3</span>，在右侧直观体验“实时峰值监控”如何用单调队列零延迟追踪最高水位！</div>
+          </div>
+          <div class="try-btns">
+            <button class="btn primary sm" onclick="lessonDemo('qpsMonitor')">▶ 演练 QPS 峰值监控</button>
+          </div>
+        </div>
+
+        <div class="quiz-box" data-quiz="q4">
+          <div class="quiz-head">随堂小测 · 场景建模</div>
+          <div class="quiz-q">某风控系统每秒收到 1 条交易金额日志，要求实时输出<strong>“过去 10 秒内的最大单笔交易额”</strong>，且总耗时严格线性。最合适的数据结构是？</div>
+          <div class="quiz-opts">
+            <button class="quiz-opt" onclick="answerQuiz('q4', false, this, '单调栈只能从栈顶弹出，无法淘汰 10 秒前已经滑出窗口的过期最大值！')">A. 单调栈</button>
+            <button class="quiz-opt" onclick="answerQuiz('q4', true, this, '完全正确！既有“固定时间窗口过期（队头弹出）”又有“取极值（队尾淘汰更小值）”，正是单调队列的绝对主场，摊还 O(1) 每条日志。')">B. 单调递减双端队列（单调队列）</button>
+          </div>
+          <div class="quiz-fb" id="fb-q4"></div>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(3)">← 上一课</button>
+        <button class="btn primary" onclick="goLesson(5)">下一课：梯度实战题解 →</button>
+      </div>
+    </article>
+
+    <!-- ===== 第 6 课 ===== -->
+    <article class="lesson-pane" id="lesson-5">
+      <div class="lesson-eyebrow"><span class="badge blue">第 6 课 · 竞赛与面试实战</span> <span>3 道梯度精讲</span></div>
+      <h2 class="lesson-title">梯度实战题解（可直接提交的 C++ 模板）</h2>
+      <p class="lesson-lead">从洛谷两大核心模板题，到面试高频压轴题 LeetCode 84，点击标签切换题解，并可一键把样例送到右侧动画台逐步验证。</p>
+
+      <div class="lesson-body">
+        <div class="prob-tabs">
+          <button class="prob-tab on" onclick="switchProb(0)">① 洛谷 P5788 单调栈模板</button>
+          <button class="prob-tab" onclick="switchProb(1)">② P1886 / LC 239 滑动窗口</button>
+          <button class="prob-tab" onclick="switchProb(2)">③ LC 84 柱状图最大矩形</button>
+        </div>
+
+        <!-- P1: Luogu P5788 -->
+        <div class="prob-pane on" id="prob-0">
+          <p><strong>题意：</strong>给定长度为 <span class="math">n</span>（<span class="math">n</span> &le; 3 &times; 10<sup>6</sup>）的数列 <span class="code-inline">a[1..n]</span>，求每个元素之后<strong>第一个严格大于它</strong>的元素下标，不存在则输出 <span class="code-inline">0</span>。</p>
+          <p><strong>建模思路：</strong>维护单调递减栈存下标。每扫到 <span class="code-inline">a[i]</span>，只要栈非空且 <span class="code-inline">a[i] &gt; a[stk.top()]</span>，就记录 <span class="code-inline">ans[stk.top()] = i</span> 并弹栈，最后把 <span class="code-inline">i</span> 压栈。手写数组栈在 3 &times; 10<sup>6</sup> 数据下速度更快。</p>
+          <div class="code-header">
+            <span>Luogu_P5788_Monotonic_Stack.cpp（时间 O(n)）</span>
+            <div>
+              <button class="btn sm" onclick="loadSample('stack', [1, 4, 2, 3, 5], 3)">在右侧加载样例</button>
+              <button class="btn sm" onclick="copyCode('code-p1')">📋 复制</button>
+            </div>
+          </div>
+          <pre class="cpp-code" id="code-p1"><span class="kw">#include</span> &lt;bits/stdc++.h&gt;
+<span class="kw">using namespace</span> std;
+
+<span class="kw">const int</span> N = <span class="num">3000005</span>;
+<span class="kw">int</span> a[N], ans[N], stk[N], top;
+
+<span class="kw">int</span> <span class="fnc">main</span>() {
+    ios::sync_with_stdio(<span class="kw">false</span>);
+    cin.tie(<span class="kw">nullptr</span>);
+    <span class="kw">int</span> n;
+    cin &gt;&gt; n;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= n; i++) cin &gt;&gt; a[i];
+
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">while</span> (top &gt; <span class="num">0</span> &amp;&amp; a[i] &gt; a[stk[top]]) {
+            ans[stk[top]] = i;
+            top--;
+        }
+        stk[++top] = i;
+    }
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= n; i++)
+        cout &lt;&lt; ans[i] &lt;&lt; (i == n ? <span class="num">'\n'</span> : <span class="num">' '</span>);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+        </div>
+
+        <!-- P2: Luogu P1886 / LC 239 -->
+        <div class="prob-pane" id="prob-1">
+          <p><strong>题意：</strong>给定长度为 <span class="math">n</span> 的数组和窗口大小 <span class="math">k</span>，窗口每次向右滑动 1 格，输出每个窗口内的最大值（洛谷 P1886 额外要求先输出最小值，把队尾比较符号取反即可）。</p>
+          <p><strong>建模思路：</strong>使用双端队列 <span class="code-inline">deque&lt;int&gt; dq</span> 存下标：先踢掉队头过期下标（<span class="code-inline">dq.front() &le; i &minus; k</span>），再踢掉队尾所有 <span class="code-inline">&le; a[i]</span> 的弱元素，压入 <span class="code-inline">i</span>，当 <span class="code-inline">i &ge; k</span> 时输出 <span class="code-inline">a[dq.front()]</span>。</p>
+          <div class="code-header">
+            <span>Luogu_P1886_LC239_Sliding_Window.cpp（时间 O(n)）</span>
+            <div>
+              <button class="btn sm" onclick="loadSample('deque', [1, 3, -1, -3, 5, 3, 6, 7], 3)">在右侧加载样例</button>
+              <button class="btn sm" onclick="copyCode('code-p2')">📋 复制</button>
+            </div>
+          </div>
+          <pre class="cpp-code" id="code-p2"><span class="kw">#include</span> &lt;bits/stdc++.h&gt;
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> <span class="fnc">main</span>() {
+    ios::sync_with_stdio(<span class="kw">false</span>);
+    cin.tie(<span class="kw">nullptr</span>);
+    <span class="kw">int</span> n, k;
+    cin &gt;&gt; n &gt;&gt; k;
+    vector&lt;<span class="kw">int</span>&gt; a(n + <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= n; i++) cin &gt;&gt; a[i];
+
+    deque&lt;<span class="kw">int</span>&gt; dq; <span class="cm">// 单调递减队列，队头为当前窗口最大值下标</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt;= n; i++) {
+        <span class="kw">while</span> (!dq.<span class="fnc">empty</span>() &amp;&amp; dq.<span class="fnc">front</span>() &lt;= i - k)
+            dq.<span class="fnc">pop_front</span>();
+        <span class="kw">while</span> (!dq.<span class="fnc">empty</span>() &amp;&amp; a[dq.<span class="fnc">back</span>()] &lt;= a[i])
+            dq.<span class="fnc">pop_back</span>();
+        dq.<span class="fnc">push_back</span>(i);
+        <span class="kw">if</span> (i &gt;= k)
+            cout &lt;&lt; a[dq.<span class="fnc">front</span>()] &lt;&lt; (i == n ? <span class="num">'\n'</span> : <span class="num">' '</span>);
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+        </div>
+
+        <!-- P3: LC 84 -->
+        <div class="prob-pane" id="prob-2">
+          <p><strong>题意：</strong>给定 <span class="math">n</span> 个非负整数表示柱状图中各个柱子的高度（每根柱子宽度为 1），求柱状图中能够勾勒出来的<strong>最大矩形面积</strong>。</p>
+          <p><strong>建模思路：</strong>在数组首尾各加一个高度为 <span class="code-inline">0</span> 的哨兵，维护<strong>单调递增栈</strong>。每当遇到 <span class="code-inline">h[i] &lt; h[stk.top()]</span>，弹出栈顶 <span class="code-inline">mid</span>，此时右边界为 <span class="code-inline">i</span>，左边界为新栈顶 <span class="code-inline">stk.top()</span>，面积直接更新为 <span class="code-inline">h[mid] &times; (i &minus; stk.top() &minus; 1)</span>。</p>
+          <div class="code-header">
+            <span>LeetCode_84_Largest_Rectangle.cpp（时间 O(n)）</span>
+            <div>
+              <button class="btn sm" onclick="loadSample('stack', [2, 1, 5, 6, 2, 3], 3)">在右侧加载样例</button>
+              <button class="btn sm" onclick="copyCode('code-p3')">📋 复制</button>
+            </div>
+          </div>
+          <pre class="cpp-code" id="code-p3"><span class="kw">#include</span> &lt;bits/stdc++.h&gt;
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> <span class="fnc">largestRectangleArea</span>(vector&lt;<span class="kw">int</span>&gt; h) {
+    <span class="cm">// 首尾各加高度为 0 的哨兵：左哨兵防栈空，右哨兵强制清空所有柱子</span>
+    h.<span class="fnc">insert</span>(h.<span class="fnc">begin</span>(), <span class="num">0</span>);
+    h.<span class="fnc">push_back</span>(<span class="num">0</span>);
+    stack&lt;<span class="kw">int</span>&gt; stk;
+    stk.<span class="fnc">push</span>(<span class="num">0</span>);
+    <span class="kw">int</span> ans = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt; (<span class="kw">int</span>)h.<span class="fnc">size</span>(); i++) {
+        <span class="kw">while</span> (h[i] &lt; h[stk.<span class="fnc">top</span>()]) {
+            <span class="kw">int</span> mid = stk.<span class="fnc">top</span>();
+            stk.<span class="fnc">pop</span>();
+            <span class="kw">int</span> width = i - stk.<span class="fnc">top</span>() - <span class="num">1</span>;
+            ans = <span class="fnc">max</span>(ans, h[mid] * width);
+        }
+        stk.<span class="fnc">push</span>(i);
+    }
+    <span class="kw">return</span> ans;
+}</pre>
+        </div>
+      </div>
+
+      <div class="lesson-footer">
+        <button class="btn" onclick="goLesson(4)">← 上一课</button>
+        <span style="color:var(--ok); font-weight:600; font-size:13px;">🎉 全部 6 课完成！欢迎在右侧自由输入数组与窗口实验</span>
+      </div>
+    </article>
+
+  </section>
+
+  <!-- ==================== 右栏：吸顶实时交互动画台 ==================== -->
+  <aside class="workbench-sticky">
+    <section class="panel">
+      <!-- Mode Switcher -->
+      <div class="mode-switch" role="tablist">
+        <button class="mode-btn on" id="modeStackBtn" type="button" onclick="setMode('stack')">单调栈（下一个更大元素）</button>
+        <button class="mode-btn" id="modeDequeBtn" type="button" onclick="setMode('deque')">单调队列（滑动窗口最大值）</button>
+      </div>
+
+      <!-- Editable Array + Window k -->
+      <div class="wb-controls">
+        <div class="wb-field">
+          <label for="arrIn">数组元素 a[1..n]（逗号或空格分隔，2~14 个整数）</label>
+          <input id="arrIn" type="text" value="2, 1, 5, 6, 2, 3, 4, 1" spellcheck="false">
+        </div>
+        <div class="wb-field narrow" id="kField" style="display:none;">
+          <label for="kIn">窗口大小 k</label>
+          <input id="kIn" type="number" min="1" max="14" value="3">
+        </div>
+      </div>
+      <div class="wb-row">
+        <button class="btn sm" id="preWave" type="button">经典波形</button>
+        <button class="btn sm" id="preInc" type="button">递增序列</button>
+        <button class="btn sm" id="preDec" type="button">递减序列</button>
+        <button class="btn sm" id="preRand" type="button">随机数组</button>
+        <span id="arrErr" class="err-txt" hidden></span>
+      </div>
+
+      <!-- SVG Bar Chart Header & Legend -->
+      <div class="graph-head" style="margin-top:10px;">
+        <span class="graph-head-title" id="chartTitle">柱状图实时演练 · 单调递减栈</span>
+        <div class="legend" id="chartLegend">
+          <span><i class="lg-stk"></i>在栈中</span>
+          <span><i class="lg-pop"></i>正在弹出</span>
+          <span><i class="lg-ok"></i>已出答案</span>
+        </div>
+      </div>
+
+      <!-- SVG Canvas -->
+      <div class="canvas-box">
+        <svg id="chart" viewBox="0 0 600 285" role="img" aria-label="单调栈与单调队列柱状图动画"></svg>
+      </div>
+
+      <!-- Step Message & Playback Controls -->
+      <div class="step-box" style="margin-top:10px;">
+        <div id="msg" class="msg" aria-live="polite"></div>
+        <div class="tl-row">
+          <button class="btn sm" id="firstBtn" type="button" title="回到开头">|&lt;</button>
+          <button class="btn sm" id="prevBtn" type="button" title="上一步 (←)">&lt;</button>
+          <button class="btn sm primary" id="playBtn" type="button" title="播放/暂停 (空格)">▶ 播放</button>
+          <button class="btn sm" id="nextBtn" type="button" title="下一步 (→)">&gt;</button>
+          <button class="btn sm" id="lastBtn" type="button" title="跳到结尾">&gt;|</button>
+          <input id="slider" type="range" min="0" max="0" value="0" aria-label="进度">
+          <span id="counter" class="counter"></span>
+          <select id="speed" aria-label="播放速度">
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="2">2×</option>
+            <option value="4">4×</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Live Stack / Deque Container -->
+    <section class="panel" style="padding:13px 16px;">
+      <div class="struct-head">
+        <span class="struct-title" id="structTitle">单调栈 stk（存下标 idx 与对应值 a[idx]）</span>
+        <span class="struct-hint" id="structHint">底 → 顶 单调递减</span>
+      </div>
+      <div class="struct-track" id="structTrack"></div>
+    </section>
+
+    <!-- Bottom Debugger Tabs -->
+    <section class="panel" style="padding:14px 16px;">
+      <div class="dbg-tabs">
+        <button class="dbg-tab on" onclick="switchDbgTab(0)">C++ 伪代码追踪</button>
+        <button class="dbg-tab" onclick="switchDbgTab(1)">结果数组与复杂度统计</button>
+      </div>
+      <div class="dbg-pane on" id="dbg-0">
+        <div id="code"></div>
+      </div>
+      <div class="dbg-pane" id="dbg-1">
+        <div id="statsPane"></div>
+      </div>
+    </section>
+  </aside>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== Theme & UI Helpers ====================
+const rootEl = document.documentElement;
+const savedTheme = localStorage.getItem('algo_theme');
+if (savedTheme === 'dark' || savedTheme === 'light') rootEl.dataset.theme = savedTheme;
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const isDark = rootEl.dataset.theme === 'dark' || (!rootEl.dataset.theme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const next = isDark ? 'light' : 'dark';
+  rootEl.dataset.theme = next;
+  localStorage.setItem('algo_theme', next);
+});
+
+let toastTimer = null;
+function showToast(text) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ==================== Lesson Navigation & Quiz ====================
+const visitedLessons = new Set([0]);
+function goLesson(idx) {
+  visitedLessons.add(idx);
+  document.querySelectorAll('.lesson-pane').forEach((p, i) => p.classList.toggle('active', i === idx));
+  document.querySelectorAll('.lesson-pill').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+    b.classList.toggle('done', visitedLessons.has(i) && i !== idx);
+  });
+  document.getElementById('progressText').textContent = `进度 ${visitedLessons.size}/6`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function answerQuiz(qid, ok, btn, feedback) {
+  const box = btn.closest('.quiz-box');
+  box.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('correct', 'wrong'));
+  btn.classList.add(ok ? 'correct' : 'wrong');
+  const fb = document.getElementById('fb-' + qid);
+  fb.textContent = (ok ? '✅ ' : '❌ ') + feedback;
+  fb.className = 'quiz-fb show ' + (ok ? 'ok' : 'err');
+}
+
+function switchProb(idx) {
+  document.querySelectorAll('.prob-tab').forEach((t, i) => t.classList.toggle('on', i === idx));
+  document.querySelectorAll('.prob-pane').forEach((p, i) => p.classList.toggle('on', i === idx));
+}
+
+function switchDbgTab(idx) {
+  document.querySelectorAll('.dbg-tab').forEach((t, i) => t.classList.toggle('on', i === idx));
+  document.querySelectorAll('.dbg-pane').forEach((p, i) => p.classList.toggle('on', i === idx));
+}
+
+function copyCode(id) {
+  const text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(() => showToast('代码已复制到剪贴板'));
+}
+
+// ==================== Pseudocode Definitions ====================
+const STACK_CODE = [
+  'for (int i = 1; i <= n; i++) {',
+  '    while (!stk.empty() && a[i] > a[stk.top()]) {',
+  '        ans[stk.top()] = i;',
+  '        stk.pop();',
+  '    }',
+  '    stk.push(i);',
+  '}'
+];
+
+const DEQUE_CODE = [
+  'for (int i = 1; i <= n; i++) {',
+  '    while (!dq.empty() && dq.front() <= i - k)',
+  '        dq.pop_front(); // 队头过期出队',
+  '    while (!dq.empty() && a[dq.back()] <= a[i])',
+  '        dq.pop_back();  // 队尾更弱元素淘汰',
+  '    dq.push_back(i);',
+  '    if (i >= k) ans[i] = a[dq.front()];',
+  '}'
+];
+
+function renderCodeBlock(mode, activeLine) {
+  const lines = mode === 'stack' ? STACK_CODE : DEQUE_CODE;
+  const html = lines.map((txt, idx) => {
+    const ln = idx + 1;
+    const esc = txt.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const cls = ln === activeLine ? 'line on' : 'line';
+    return `<div class="${cls}"><span class="ln">${ln}</span><span>${esc}</span></div>`;
+  }).join('');
+  document.getElementById('code').innerHTML = `<div class="code">${html}</div>`;
+}
+
+// ==================== Trace Builders ====================
+function buildStackTrace(arr) {
+  const n = arr.length;
+  const a = [0, ...arr]; // 1-indexed
+  const ans = Array(n + 1).fill(0);
+  const stk = [];
+  const steps = [];
+  let pushes = 0, pops = 0;
+
+  const snap = (extra) => {
+    steps.push({
+      mode: 'stack',
+      n, a,
+      i: extra.i || 0,
+      stk: [...stk],
+      ans: [...ans],
+      poppedIdx: extra.poppedIdx || 0,
+      pushedIdx: extra.pushedIdx || 0,
+      changedAnsIdx: extra.changedAnsIdx || 0,
+      pushes, pops,
+      line: extra.line || 0,
+      kind: extra.kind || '',
+      msg: extra.msg || ''
+    });
+  };
+
+  snap({
+    line: 0,
+    msg: `准备就绪：数组长度 n = ${n}。目标：求每个元素右侧第一个严格大于它的下标（不存在记 0）。`
+  });
+
+  for (let i = 1; i <= n; i++) {
+    snap({
+      i, line: 1,
+      msg: `扫描到下标 i = ${i}，当前值 a[${i}] = ${a[i]}。检查栈顶元素是否小于 ${a[i]}。`
+    });
+
+    while (stk.length > 0 && a[i] > a[stk[stk.length - 1]]) {
+      const topIdx = stk[stk.length - 1];
+      ans[topIdx] = i;
+      snap({
+        i, poppedIdx: topIdx, changedAnsIdx: topIdx, line: 3, kind: 'pop',
+        msg: `a[${i}] = ${a[i]} > 栈顶 a[${topIdx}] = ${a[topIdx]}！触发弹栈：记录 ans[${topIdx}] = ${i}，并将下标 ${topIdx} 弹出。`
+      });
+      stk.pop();
+      pops++;
+    }
+
+    stk.push(i);
+    pushes++;
+    snap({
+      i, pushedIdx: i, line: 6,
+      msg: `栈顶已无更小元素，将下标 ${i}（值 ${a[i]}）压入栈顶。当前栈内保持单调递减。`
+    });
+  }
+
+  snap({
+    i: 0, line: 0, kind: 'end',
+    msg: `扫描完成！仍在栈中的元素右侧没有更大值，答案保持 0。总入栈 ${pushes} 次 + 总出栈 ${pops} 次 = ${pushes + pops} ≤ 2n (${2 * n})！`
+  });
+
+  return steps;
+}
+
+function buildDequeTrace(arr, k) {
+  const n = arr.length;
+  const a = [0, ...arr];
+  const ans = Array(n + 1).fill(null); // ans[i] = max in [i-k+1, i] for i >= k
+  const dq = [];
+  const expired = new Set();
+  const steps = [];
+  let pushes = 0, pops = 0;
+
+  const snap = (extra) => {
+    steps.push({
+      mode: 'deque',
+      n, k, a,
+      i: extra.i || 0,
+      dq: [...dq],
+      ans: [...ans],
+      expired: new Set(expired),
+      expPopIdx: extra.expPopIdx || 0,
+      backPopIdx: extra.backPopIdx || 0,
+      pushedIdx: extra.pushedIdx || 0,
+      winMaxIdx: extra.winMaxIdx || 0,
+      changedAnsIdx: extra.changedAnsIdx || 0,
+      pushes, pops,
+      line: extra.line || 0,
+      kind: extra.kind || '',
+      msg: extra.msg || ''
+    });
+  };
+
+  snap({
+    line: 0,
+    msg: `准备就绪：数组长度 n = ${n}，窗口大小 k = ${k}。目标：O(n) 求出每个长度为 ${k} 的滑动窗口最大值。`
+  });
+
+  for (let i = 1; i <= n; i++) {
+    const winL = Math.max(1, i - k + 1);
+    for (let x = 1; x < winL; x++) expired.add(x);
+
+    snap({
+      i, line: 1,
+      msg: `窗口右端移动到 i = ${i}（值 ${a[i]}），当前窗口范围 [${winL}, ${i}]。先检查队头是否过期。`
+    });
+
+    while (dq.length > 0 && dq[0] <= i - k) {
+      const fIdx = dq[0];
+      snap({
+        i, expPopIdx: fIdx, line: 3, kind: 'exp',
+        msg: `队头下标 ${fIdx} ≤ ${i} − ${k}，已经滑出窗口 [${winL}, ${i}]！从队头弹出 ${fIdx}。`
+      });
+      dq.shift();
+      pops++;
+    }
+
+    while (dq.length > 0 && a[dq[dq.length - 1]] <= a[i]) {
+      const bIdx = dq[dq.length - 1];
+      snap({
+        i, backPopIdx: bIdx, line: 5, kind: 'pop',
+        msg: `队尾 a[${bIdx}] = ${a[bIdx]} ≤ 当前 a[${i}] = ${a[i]}（又老又弱）！从队尾淘汰下标 ${bIdx}。`
+      });
+      dq.pop();
+      pops++;
+    }
+
+    dq.push(i);
+    pushes++;
+    snap({
+      i, pushedIdx: i, line: 6,
+      msg: `将下标 ${i}（值 ${a[i]}）从队尾入队。队列保持严格递减。`
+    });
+
+    if (i >= k) {
+      const maxIdx = dq[0];
+      ans[i] = a[maxIdx];
+      snap({
+        i, winMaxIdx: maxIdx, changedAnsIdx: i, line: 7, kind: 'ans',
+        msg: `窗口 [${i - k + 1}, ${i}] 已满！队头下标 ${maxIdx} 即为当前窗口最大值：ans[${i}] = ${a[maxIdx]}。`
+      });
+    }
+  }
+
+  snap({
+    i: 0, line: 0, kind: 'end',
+    msg: `全部窗口扫描完成！总入队 ${pushes} 次 + 总出队 ${pops} 次 = ${pushes + pops} ≤ 2n (${2 * n})，严格 O(n)！`
+  });
+
+  return steps;
+}
+
+// ==================== SVG Bar Chart Renderer ====================
+function renderChart(step) {
+  const svg = document.getElementById('chart');
+  const W = 600, H = 285;
+  const padL = 28, padR = 24, topY = 48, botY = 226;
+  const n = step.n;
+  const vals = step.a.slice(1);
+  const maxV = Math.max(1, ...vals);
+  const minV = Math.min(0, ...vals);
+  const span = Math.max(1, maxV - minV);
+  const chartH = botY - topY;
+  const zeroY = topY + (maxV / span) * chartH;
+
+  const slotW = (W - padL - padR) / n;
+  const barW = Math.min(44, Math.max(18, slotW * 0.64));
+
+  let out = `<defs>
+    <marker id="ar-pop" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--warn)"/>
+    </marker>
+    <marker id="ar-exp" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--err)"/>
+    </marker>
+  </defs>`;
+
+  // Sliding window bracket in Deque mode
+  if (step.mode === 'deque' && step.i > 0) {
+    const winL = Math.max(1, step.i - step.k + 1);
+    const winR = step.i;
+    const x1 = padL + (winL - 1) * slotW + 2;
+    const x2 = padL + winR * slotW - 2;
+    out += `<rect x="${x1}" y="22" width="${x2 - x1}" height="${botY - 14}" rx="9" fill="color-mix(in srgb, var(--accent) 8%, transparent)" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="5 3"/>`;
+    out += `<text x="${(x1 + x2) / 2}" y="16" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--accent)">滑动窗口 [${winL}..${winR}] (k=${step.k})</text>`;
+  }
+
+  // Zero baseline
+  out += `<line x1="${padL - 8}" y1="${zeroY}" x2="${W - padR + 8}" y2="${zeroY}" stroke="var(--line-strong)" stroke-width="1.4"/>`;
+
+  const inStruct = new Set(step.mode === 'stack' ? step.stk : step.dq);
+  const barCenters = {};
+
+  for (let idx = 1; idx <= n; idx++) {
+    const v = step.a[idx];
+    const cx = padL + (idx - 0.5) * slotW;
+    const bx = cx - barW / 2;
+    const h = Math.max(5, Math.abs(v) / span * chartH);
+    const by = v >= 0 ? zeroY - h : zeroY;
+    barCenters[idx] = { cx, topY: Math.min(by, zeroY - 6) };
+
+    // Determine bar style
+    let fill = 'var(--panel)', stroke = 'var(--line-strong)', strokeW = 1.6, dash = '';
+    let valColor = 'var(--ink)';
+
+    if (step.mode === 'stack') {
+      if (idx === step.poppedIdx) {
+        fill = 'var(--warn-soft)'; stroke = 'var(--warn)'; strokeW = 2.4; valColor = 'var(--warn)';
+      } else if (idx === step.pushedIdx || idx === step.i) {
+        fill = 'var(--accent)'; stroke = 'var(--accent)'; strokeW = 2.2; valColor = 'var(--accent)';
+      } else if (inStruct.has(idx)) {
+        fill = 'var(--accent-soft)'; stroke = 'var(--accent)'; strokeW = 2; valColor = 'var(--accent)';
+      } else if (step.ans[idx] > 0) {
+        fill = 'var(--ok-soft)'; stroke = 'var(--ok)'; strokeW = 1.8; valColor = 'var(--ok)';
+      }
+    } else {
+      if (idx === step.expPopIdx) {
+        fill = 'var(--err-soft)'; stroke = 'var(--err)'; strokeW = 2.4; dash = '4 3'; valColor = 'var(--err)';
+      } else if (idx === step.backPopIdx) {
+        fill = 'var(--warn-soft)'; stroke = 'var(--warn)'; strokeW = 2.4; valColor = 'var(--warn)';
+      } else if (idx === step.winMaxIdx) {
+        fill = 'var(--ok-soft)'; stroke = 'var(--ok)'; strokeW = 2.6; valColor = 'var(--ok)';
+      } else if (idx === step.pushedIdx || idx === step.i) {
+        fill = 'var(--accent)'; stroke = 'var(--accent)'; strokeW = 2.2; valColor = 'var(--accent)';
+      } else if (inStruct.has(idx)) {
+        fill = 'var(--accent-soft)'; stroke = 'var(--accent)'; strokeW = 2; valColor = 'var(--accent)';
+      } else if (step.expired && step.expired.has(idx)) {
+        fill = 'var(--sunk)'; stroke = 'var(--skip)'; strokeW = 1.4; dash = '3 3'; valColor = 'var(--skip)';
+      }
+    }
+
+    // Bar rect
+    out += `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" ${dash ? `stroke-dasharray="${dash}"` : ''}/>`;
+
+    // Value label
+    const valY = v >= 0 ? by - 6 : by + h + 13;
+    out += `<text x="${cx.toFixed(1)}" y="${valY.toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="700" fill="${valColor}">${v}</text>`;
+
+    // Current pointer i tag
+    if (idx === step.i) {
+      const py = Math.max(30, (v >= 0 ? by - 20 : zeroY - 16));
+      out += `<text x="${cx.toFixed(1)}" y="${py.toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--accent)">▼ i=${idx}</text>`;
+    }
+
+    // Window max crown in deque mode
+    if (step.mode === 'deque' && idx === step.winMaxIdx) {
+      const cy = Math.max(30, (v >= 0 ? by - 20 : zeroY - 16));
+      out += `<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--ok)">★ MAX</text>`;
+    }
+
+    // Index label below chart
+    out += `<text x="${cx.toFixed(1)}" y="246" text-anchor="middle" font-size="11" font-weight="${idx === step.i ? '700' : '500'}" fill="${idx === step.i ? 'var(--accent)' : 'var(--muted)'}">[${idx}]</text>`;
+
+    // Answer badge below index
+    if (step.mode === 'stack') {
+      const ansVal = step.ans[idx];
+      const hasAns = ansVal > 0;
+      const isChg = idx === step.changedAnsIdx;
+      const badgeFill = isChg ? 'var(--warn-soft)' : (hasAns ? 'var(--ok-soft)' : 'var(--panel)');
+      const badgeStroke = isChg ? 'var(--warn)' : (hasAns ? 'var(--ok)' : 'var(--line)');
+      const badgeTxt = isChg ? 'var(--warn)' : (hasAns ? 'var(--ok)' : 'var(--skip)');
+      const bw = Math.min(36, slotW - 4);
+      out += `<rect x="${(cx - bw / 2).toFixed(1)}" y="254" width="${bw.toFixed(1)}" height="20" rx="5" fill="${badgeFill}" stroke="${badgeStroke}" stroke-width="1.2"/>`;
+      out += `<text x="${cx.toFixed(1)}" y="268" text-anchor="middle" font-size="10.5" font-weight="700" fill="${badgeTxt}">${hasAns ? '→' + ansVal : '0'}</text>`;
+    } else {
+      const ansVal = step.ans[idx];
+      if (idx >= step.k) {
+        const hasAns = ansVal !== null;
+        const isChg = idx === step.changedAnsIdx;
+        const badgeFill = isChg ? 'var(--ok)' : (hasAns ? 'var(--ok-soft)' : 'var(--panel)');
+        const badgeStroke = hasAns ? 'var(--ok)' : 'var(--line)';
+        const badgeTxt = isChg ? 'var(--on-accent)' : (hasAns ? 'var(--ok)' : 'var(--skip)');
+        const bw = Math.min(36, slotW - 4);
+        out += `<rect x="${(cx - bw / 2).toFixed(1)}" y="254" width="${bw.toFixed(1)}" height="20" rx="5" fill="${badgeFill}" stroke="${badgeStroke}" stroke-width="1.2"/>`;
+        out += `<text x="${cx.toFixed(1)}" y="268" text-anchor="middle" font-size="10.5" font-weight="700" fill="${badgeTxt}">${hasAns ? ansVal : '·'}</text>`;
+      } else {
+        out += `<text x="${cx.toFixed(1)}" y="268" text-anchor="middle" font-size="10" fill="var(--skip)">—</text>`;
+      }
+    }
+  }
+
+  // Row label for answer badges
+  out += `<text x="12" y="268" font-size="10" font-weight="700" fill="var(--muted)">ans</text>`;
+
+  // Curved dashed arrow when popping/eliminating an element due to i
+  const popSrc = step.mode === 'stack' ? step.poppedIdx : step.backPopIdx;
+  if (popSrc > 0 && step.i > 0 && barCenters[popSrc] && barCenters[step.i]) {
+    const p1 = barCenters[popSrc];
+    const p2 = barCenters[step.i];
+    const midX = (p1.cx + p2.cx) / 2;
+    const ctrlY = Math.max(24, Math.min(p1.topY, p2.topY) - 34);
+    out += `<path d="M${p1.cx.toFixed(1)},${(p1.topY - 8).toFixed(1)} Q${midX.toFixed(1)},${ctrlY.toFixed(1)} ${(p2.cx - 6).toFixed(1)},${(p2.topY - 6).toFixed(1)}" fill="none" stroke="var(--warn)" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#ar-pop)"/>`;
+  }
+
+  svg.innerHTML = out;
+}
+
+// ==================== Render Stack/Deque & Complexity Stats ====================
+function renderStruct(step) {
+  const track = document.getElementById('structTrack');
+  const title = document.getElementById('structTitle');
+  const hint = document.getElementById('structHint');
+
+  if (step.mode === 'stack') {
+    title.textContent = '单调栈 stk（存下标 idx 与数值 a[idx]）';
+    hint.textContent = '底 → 顶 单调递减';
+    let html = '<span class="struct-end">底 BOTTOM</span>';
+    if (step.stk.length === 0) {
+      html += '<span class="stkempty">（空栈）</span>';
+    } else {
+      step.stk.forEach((idx, pos) => {
+        const isTop = pos === step.stk.length - 1;
+        let cls = 'pill-node';
+        if (idx === step.poppedIdx) cls += ' is-pop';
+        else if (idx === step.pushedIdx) cls += ' is-new';
+        else if (isTop) cls += ' is-top';
+        html += `<div class="${cls}"><span class="p-val">${step.a[idx]}</span><span class="p-idx">idx=${idx}</span></div>`;
+      });
+    }
+    html += '<span class="struct-end">顶 TOP</span>';
+    track.innerHTML = html;
+  } else {
+    title.textContent = '单调双端队列 dq（队头 = 窗口最大值）';
+    hint.textContent = '头 → 尾 严格递减';
+    let html = '<span class="struct-end">队头 FRONT</span>';
+    if (step.dq.length === 0) {
+      html += '<span class="stkempty">（空队列）</span>';
+    } else {
+      step.dq.forEach((idx, pos) => {
+        const isFront = pos === 0;
+        let cls = 'pill-node';
+        if (idx === step.expPopIdx) cls += ' is-exp';
+        else if (idx === step.backPopIdx) cls += ' is-pop';
+        else if (idx === step.pushedIdx) cls += ' is-new';
+        else if (isFront) cls += ' is-front';
+        html += `<div class="${cls}"><span class="p-val">${step.a[idx]}</span><span class="p-idx">idx=${idx}</span></div>`;
+      });
+    }
+    html += '<span class="struct-end">队尾 BACK</span>';
+    track.innerHTML = html;
+  }
+}
+
+function renderStats(step) {
+  const pane = document.getElementById('statsPane');
+  const label = step.mode === 'stack' ? 'ans[i]' : 'winMax';
+  let cellsHtml = '';
+  for (let idx = 1; idx <= step.n; idx++) {
+    let valStr = '0';
+    let cls = 'cell';
+    if (step.mode === 'stack') {
+      valStr = String(step.ans[idx]);
+      if (step.ans[idx] === 0) cls += ' zero';
+      if (idx === step.changedAnsIdx) cls += ' changed';
+      else if (idx === step.i) cls += ' cur';
+    } else {
+      if (idx < step.k) { valStr = '—'; cls += ' zero'; }
+      else if (step.ans[idx] === null) { valStr = '·'; cls += ' zero'; }
+      else { valStr = String(step.ans[idx]); }
+      if (idx === step.changedAnsIdx) cls += ' changed';
+      else if (idx === step.i) cls += ' cur';
+    }
+    cellsHtml += `<div class="${cls}"><i>[${idx}]</i><b>${valStr}</b></div>`;
+  }
+
+  const totalOps = step.pushes + step.pops;
+  const bound = 2 * step.n;
+  const opName = step.mode === 'stack' ? '栈' : '队';
+
+  pane.innerHTML = `
+    <div class="arow">
+      <div class="aname">${label}</div>
+      <div class="cells">${cellsHtml}</div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="s-k">数组长度 n</div><div class="s-v">${step.n}</div></div>
+      <div class="stat-card"><div class="s-k">累计入${opName}</div><div class="s-v">${step.pushes}</div></div>
+      <div class="stat-card"><div class="s-k">累计出${opName}</div><div class="s-v">${step.pops}</div></div>
+      <div class="stat-card ok"><div class="s-k">总操作 ≤ 2n (${bound})</div><div class="s-v">${totalOps} / ${bound}</div></div>
+    </div>
+  `;
+}
+
+// ==================== Playback State & Controller ====================
+let currentMode = 'stack';
+let trace = [];
+let curStep = 0;
+let playTimer = null;
+
+function stopPlay() {
+  if (playTimer) { clearInterval(playTimer); playTimer = null; }
+  document.getElementById('playBtn').textContent = '▶ 播放';
+}
+
+function togglePlay() {
+  if (playTimer) {
+    stopPlay();
+    return;
+  }
+  if (curStep >= trace.length - 1) curStep = 0;
+  document.getElementById('playBtn').textContent = '⏸ 暂停';
+  const spd = parseFloat(document.getElementById('speed').value) || 1;
+  const delay = Math.max(150, Math.round(900 / spd));
+  renderStep(curStep);
+  playTimer = setInterval(() => {
+    if (curStep < trace.length - 1) {
+      curStep++;
+      renderStep(curStep);
+    } else {
+      stopPlay();
+    }
+  }, delay);
+}
+
+function renderStep(idx) {
+  if (!trace.length) return;
+  curStep = Math.max(0, Math.min(trace.length - 1, idx));
+  const step = trace[curStep];
+
+  renderChart(step);
+  renderStruct(step);
+  renderCodeBlock(step.mode, step.line);
+  renderStats(step);
+
+  const msgEl = document.getElementById('msg');
+  msgEl.textContent = step.msg;
+  msgEl.className = 'msg ' + (step.kind || '');
+
+  const slider = document.getElementById('slider');
+  slider.max = trace.length - 1;
+  slider.value = curStep;
+  document.getElementById('counter').textContent = `${curStep + 1} / ${trace.length}`;
+
+  document.getElementById('firstBtn').disabled = curStep === 0;
+  document.getElementById('prevBtn').disabled = curStep === 0;
+  document.getElementById('nextBtn').disabled = curStep === trace.length - 1;
+  document.getElementById('lastBtn').disabled = curStep === trace.length - 1;
+}
+
+function parseAndRebuild(autoPlay = false, jumpEnd = false) {
+  stopPlay();
+  const raw = document.getElementById('arrIn').value.trim();
+  const errEl = document.getElementById('arrErr');
+  const tokens = raw.split(/[\s,，]+/).filter(Boolean);
+  const nums = tokens.map(Number);
+
+  if (tokens.length < 2 || tokens.length > 14 || nums.some(x => !Number.isFinite(x) || !Number.isInteger(x))) {
+    errEl.textContent = '请输入 2~14 个整数（用逗号或空格分隔）';
+    errEl.hidden = false;
+    return false;
+  }
+  errEl.hidden = true;
+
+  let k = parseInt(document.getElementById('kIn').value, 10);
+  if (!Number.isFinite(k) || k < 1) k = 1;
+  if (k > nums.length) k = nums.length;
+  document.getElementById('kIn').value = k;
+
+  trace = currentMode === 'stack' ? buildStackTrace(nums) : buildDequeTrace(nums, k);
+  renderStep(jumpEnd ? trace.length - 1 : 0);
+  if (autoPlay) togglePlay();
+  return true;
+}
+
+function setMode(mode, silent = false) {
+  currentMode = mode;
+  document.getElementById('modeStackBtn').classList.toggle('on', mode === 'stack');
+  document.getElementById('modeDequeBtn').classList.toggle('on', mode === 'deque');
+  document.getElementById('kField').style.display = mode === 'deque' ? 'flex' : 'none';
+  document.getElementById('chartTitle').textContent = mode === 'stack'
+    ? '柱状图实时演练 · 单调递减栈'
+    : '柱状图实时演练 · 单调队列滑窗';
+  document.getElementById('chartLegend').innerHTML = mode === 'stack'
+    ? '<span><i class="lg-stk"></i>在栈中</span><span><i class="lg-pop"></i>正在弹出</span><span><i class="lg-ok"></i>已出答案</span>'
+    : '<span><i class="lg-stk"></i>在队列中</span><span><i class="lg-pop"></i>队尾淘汰</span><span><i class="lg-exp"></i>过期出队</span><span><i class="lg-ok"></i>窗口最大</span>';
+  if (!silent) parseAndRebuild(false, false);
+}
+
+// ==================== Lesson Micro-Experiments & Presets ====================
+function loadSample(mode, arr, k = 3, autoPlay = true, jumpEnd = false) {
+  setMode(mode, true);
+  document.getElementById('arrIn').value = arr.join(', ');
+  document.getElementById('kIn').value = k;
+  parseAndRebuild(autoPlay, jumpEnd);
+  showToast(`已加载${mode === 'stack' ? '单调栈' : '单调队列'}样例`);
+}
+
+function lessonDemo(kind) {
+  if (kind === 'stackWave') loadSample('stack', [2, 1, 5, 6, 2, 3, 4, 1], 3, true, false);
+  else if (kind === 'stackEnd') loadSample('stack', [2, 1, 5, 6, 2, 3, 4, 1], 3, false, true);
+  else if (kind === 'stackInc') { switchDbgTab(1); loadSample('stack', [1, 2, 3, 4, 5, 6, 7], 3, true, false); }
+  else if (kind === 'stackDec') { switchDbgTab(1); loadSample('stack', [7, 6, 5, 4, 3, 2, 1], 3, true, false); }
+  else if (kind === 'lc84') loadSample('stack', [2, 1, 5, 6, 2, 3], 3, true, false);
+  else if (kind === 'lc42') loadSample('stack', [4, 2, 0, 3, 2, 5], 3, true, false);
+  else if (kind === 'dequeLC239') loadSample('deque', [1, 3, -1, -3, 5, 3, 6, 7], 3, true, false);
+  else if (kind === 'dequeWave') loadSample('deque', [3, 5, 2, 1, 7, 4, 6, 2], 3, true, false);
+  else if (kind === 'qpsMonitor') loadSample('deque', [42, 35, 68, 54, 80, 61, 45, 73], 3, true, false);
+}
+
+// ==================== Wire Controls & Keyboard Shortcuts ====================
+document.getElementById('arrIn').addEventListener('change', () => parseAndRebuild());
+document.getElementById('kIn').addEventListener('change', () => parseAndRebuild());
+
+document.getElementById('preWave').addEventListener('click', () => {
+  document.getElementById('arrIn').value = currentMode === 'stack' ? '2, 1, 5, 6, 2, 3, 4, 1' : '1, 3, -1, -3, 5, 3, 6, 7';
+  document.getElementById('kIn').value = 3;
+  parseAndRebuild();
+});
+document.getElementById('preInc').addEventListener('click', () => {
+  document.getElementById('arrIn').value = '1, 2, 3, 4, 5, 6, 7, 8';
+  parseAndRebuild();
+});
+document.getElementById('preDec').addEventListener('click', () => {
+  document.getElementById('arrIn').value = '8, 7, 6, 5, 4, 3, 2, 1';
+  parseAndRebuild();
+});
+document.getElementById('preRand').addEventListener('click', () => {
+  const len = 8;
+  const arr = Array.from({ length: len }, () => Math.floor(Math.random() * 14) + 1);
+  document.getElementById('arrIn').value = arr.join(', ');
+  parseAndRebuild();
+});
+
+document.getElementById('firstBtn').addEventListener('click', () => { stopPlay(); renderStep(0); });
+document.getElementById('prevBtn').addEventListener('click', () => { stopPlay(); renderStep(curStep - 1); });
+document.getElementById('playBtn').addEventListener('click', togglePlay);
+document.getElementById('nextBtn').addEventListener('click', () => { stopPlay(); renderStep(curStep + 1); });
+document.getElementById('lastBtn').addEventListener('click', () => { stopPlay(); renderStep(trace.length - 1); });
+document.getElementById('slider').addEventListener('input', (e) => { stopPlay(); renderStep(Number(e.target.value)); });
+document.getElementById('speed').addEventListener('change', () => {
+  if (playTimer) { stopPlay(); togglePlay(); }
+});
+
+document.addEventListener('keydown', (e) => {
+  const tag = (e.target && e.target.tagName) || '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  else if (e.code === 'ArrowLeft') { e.preventDefault(); stopPlay(); renderStep(curStep - 1); }
+  else if (e.code === 'ArrowRight') { e.preventDefault(); stopPlay(); renderStep(curStep + 1); }
+});
+
+// Initial render
+parseAndRebuild(false, false);
+</script>
+</body>
+</html>
